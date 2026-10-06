@@ -5,7 +5,7 @@ Skillz Directory
 Software Requirements Specification
 
 Version 1.0
-24th September 2026
+28th September 2026
 
 Phalira Grace Christina
 Group Leader / Lead Software Engineer
