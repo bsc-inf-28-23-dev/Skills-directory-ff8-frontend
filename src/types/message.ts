@@ -4,5 +4,5 @@ export interface Message {
   senderId: string;
   senderName: string;
   content: string;
-  createdAt: string; 
+  createdAt: string;
 }

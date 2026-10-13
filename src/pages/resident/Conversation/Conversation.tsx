@@ -1,6 +1,6 @@
 import React, { useEffect, useRef, useState } from 'react';
 import { useParams, useNavigate } from 'react-router-dom';
-import { Message } from '../../../types/message';
+import type{ Message } from '../../../types/message';
 
 const FAKE_USER_ID = 'user-1';
 const FAKE_USER_NAME = 'You';
