@@ -1,0 +1,169 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8" />
+<meta name="viewport" content="width=device-width, initial-scale=1" />
+<title>Service listings | Skillz Directory</title>
+<meta name="description" content="Browse every service offered by local providers — from burst pipe repairs to home rewiring — and connect inside Skillz Directory." />
+<meta property="og:title" content="Service listings | Skillz Directory" />
+<meta property="og:description" content="Browse every service offered by local providers — from burst pipe repairs to home rewiring — and connect inside Skillz Directory." />
+<meta property="og:type" content="website" />
+<meta name="twitter:card" content="summary_large_image" />
+<link rel="preconnect" href="https://fonts.googleapis.com" />
+<link rel="preconnect" href="https://fonts.gstatic.com" crossorigin />
+<link href="https://fonts.googleapis.com/css2?family=Anton&family=Inter:wght@400;500;600;700&display=swap" rel="stylesheet" />
+<link rel="stylesheet" href="styles.css" />
+</head>
+<body>
+
+
+<header>
+  <div class="page-container bar">
+    <a class="brand" href="index.html" aria-label="Skillz Directory home">
+      <span class="brand-mark">S</span>
+      <span class="brand-name">Skillz<span class="text-primary">Directory</span></span>
+    </a>
+    <nav class="nav-desktop" aria-label="Main navigation">
+      <button class="btn btn-nav" type="button" aria-current="page">Browse services</button>
+      <button class="btn btn-nav" type="button" onclick="showReviews()">Reviews</button>
+      <button class="btn btn-nav" type="button" onclick="openDialog('help')">How it works</button>
+    </nav>
+    <div class="actions">
+      <a class="btn provider-cta" href="auth.html?mode=provider">Provider?</a>
+      <a class="profile-link" href="profile.html" aria-label="Profile">
+        <span class="profile-avatar" aria-hidden="true">
+          <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round"><circle cx="12" cy="8" r="3.5"/><path d="M5 20c.7-3.4 3.2-5.2 7-5.2s6.3 1.8 7 5.2"/></svg>
+        </span>
+        <span>Profile</span>
+      </a>
+    </div>
+    <button class="btn btn-nav btn-icon mobile-only" type="button" id="menuBtn" aria-label="Open menu" aria-expanded="false" onclick="toggleMenu()">
+      <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round"><line x1="4" x2="20" y1="6" y2="6"/><line x1="4" x2="20" y1="12" y2="12"/><line x1="4" x2="20" y1="18" y2="18"/></svg>
+    </button>
+  </div>
+  <nav class="menu-panel page-container" id="menuPanel" aria-label="Mobile navigation">
+    <button class="btn btn-nav" type="button" aria-current="page">Browse services</button>
+    <button class="btn btn-nav" type="button" onclick="showReviews()">Reviews</button>
+    <button class="btn btn-nav" type="button" onclick="openDialog('help')">How it works</button>
+    <a class="profile-link" href="profile.html">
+      <span class="profile-avatar" aria-hidden="true">
+        <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round"><circle cx="12" cy="8" r="3.5"/><path d="M5 20c.7-3.4 3.2-5.2 7-5.2s6.3 1.8 7 5.2"/></svg>
+      </span>
+      <span>Profile</span>
+    </a>
+    <a class="btn provider-cta" href="auth.html?mode=provider">Provider?</a>
+  </nav>
+</header>
+
+<main>
+  <section class="border-b">
+    <div class="page-container hero">
+      <h1 class="display-heading discovery-title title-reveal">Every skill on your <span class="text-primary">street</span>, listed.</h1>
+      <p>Browse the services local providers offer, compare resident ratings, and start a live chat when one fits the job.</p>
+      <form class="search-row" id="searchForm">
+        <label class="search-field">
+          <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" class="text-muted"><circle cx="11" cy="11" r="8"/><path d="m21 21-4.3-4.3"/></svg>
+          <span class="display-heading" style="font-size:14px">Service</span>
+          <input id="keyword" aria-label="Search services" placeholder="e.g. drain clearing, rewiring, AC maintenance" />
+        </label>
+        <button class="btn btn-athletic btn-search" type="submit">Search</button>
+      </form>
+    </div>
+  </section>
+
+  
+  <section class="border-b">
+    <div class="page-container filters">
+      <span class="eyebrow text-muted label">Filter: </span>
+      <span id="tradeButtons"></span>
+    </div>
+  </section>
+
+  
+  <section class="page-container results">
+    <div class="results-head">
+      <div>
+        <div class="eyebrow text-muted" id="count"></div>
+        <h2 id="resultsTitle">All services near you</h2>
+      </div>
+      <span class="fine">Distances and ratings are illustrative.</span>
+    </div>
+    <div class="grid" id="listings"></div>
+    <div class="empty" id="empty" hidden>
+      <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round"><circle cx="11" cy="11" r="8"/><path d="m21 21-4.3-4.3"/></svg>
+      <h3>No services match</h3>
+      <p>Try a different keyword or another trade.</p>
+      <button class="btn btn-ink" type="button" style="margin-top:24px" onclick="reset()">Clear filters</button>
+    </div>
+    <p class="disclaimer">
+      <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M21 15a2 2 0 0 1-2 2H7l-4 4V5a2 2 0 0 1 2-2h14a2 2 0 0 1 2 2z"/></svg>
+      Residents reach providers through internal live chat only — no external contact details are shared. Qualifications and licenses are not independently verified.
+    </p>
+  </section>
+</main>
+
+
+<footer>
+  <div class="page-container foot-grid">
+    <h2>Find the right <span class="text-primary">local help</span><br />for your next job.</h2>
+    <nav class="foot-nav" aria-label="Footer navigation">
+      <a href="services.html">Browse services</a>
+      <a href="profile.html">Profile</a>
+    </nav>
+    <p class="foot-note">Skillz Directory connects residents with local tradespeople. Listings and reviews shown are sample content. Provider qualifications and licenses are not independently verified.</p>
+  </div>
+  <div class="page-container foot-bottom"><span>© 2026 Skillz Directory</span><span>Local skills. Real connections.</span></div>
+</footer>
+
+
+<div class="overlay" id="help">
+  <div class="modal" role="dialog" aria-modal="true" aria-labelledby="helpTitle">
+    <button class="btn btn-nav btn-icon close" type="button" aria-label="Close" onclick="closeDialog('help')">✕</button>
+    <h2 id="helpTitle">Local help, in three steps</h2>
+    <p class="sub">Find local skills and talk safely inside Skillz Directory.</p>
+    <ol class="steps">
+      <li><span class="n">01</span><div><h3>Find your trade</h3><p>Choose a service category and explore providers in your neighborhood.</p></div></li>
+      <li><span class="n">02</span><div><h3>Compare your options</h3><p>Read service details and resident reviews before choosing a provider.</p></div></li>
+      <li><span class="n">03</span><div><h3>Start a live chat</h3><p>Message the provider inside Skillz Directory to discuss the work.</p></div></li>
+    </ol>
+  </div>
+</div>
+
+<div class="overlay" id="reviews">
+  <div class="modal" role="dialog" aria-modal="true" aria-labelledby="reviewsTitle">
+    <button class="btn btn-nav btn-icon close" type="button" aria-label="Close" onclick="closeDialog('reviews')">✕</button>
+    <h2 id="reviewsTitle">Resident reviews</h2>
+    <p class="sub">Sample reviews and ratings from local service listings.</p>
+    <ul class="review-list" id="reviewList"></ul>
+  </div>
+</div>
+
+
+<div class="overlay" id="provider">
+  <div class="modal" role="dialog" aria-modal="true" aria-labelledby="providerTitle">
+    <button class="btn btn-nav btn-icon close" type="button" aria-label="Close" onclick="closeDialog('provider')">✕</button>
+    <h2 id="providerTitle"></h2>
+    <p class="sub" id="providerSub"></p>
+    <ul class="srv-list" id="providerServices"></ul>
+    <p class="quote" id="providerQuote"></p>
+  </div>
+</div>
+
+
+<div class="overlay" id="chat">
+  <div class="modal" role="dialog" aria-modal="true" aria-labelledby="chatTitle">
+    <button class="btn btn-nav btn-icon close" type="button" aria-label="Close" onclick="closeDialog('chat')">✕</button>
+    <h2 id="chatTitle">Live chat</h2>
+    <p class="sub" id="chatSub"></p>
+    <ul class="chat-log" id="chatLog"></ul>
+    <form class="chat-form" id="chatForm">
+      <input id="chatInput" aria-label="Message" placeholder="Write a message…" autocomplete="off" />
+      <button class="btn btn-athletic" type="submit">Send</button>
+    </form>
+    <p class="preview-note">Live chat design preview. Messages are not permanently saved or delivered.</p>
+  </div>
+</div>
+
+<script src="script.js" defer></script>
+</body>
+</html>
