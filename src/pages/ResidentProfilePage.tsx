@@ -12,7 +12,7 @@ import {
 } from "lucide-react";
 import Avatar from "../components/Avatar";
 import Eyebrow from "../components/Eyebrow";
-import { useAuth } from "../features/auth/AuthContext";
+import { useAuth } from "../hooks/useAuth";
 import MyReviews from "../features/resident/MyReviews";
 import ProfileForm from "../features/resident/ProfileForm";
 import type { Gender } from "../types";

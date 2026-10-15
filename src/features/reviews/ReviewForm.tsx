@@ -1,10 +1,10 @@
-import { useState, type FormEvent } from "react";
+﻿import { useState, type FormEvent } from "react";
 import { Link, useLocation } from "react-router-dom";
 import { ArrowRight } from "lucide-react";
 import { submitReview } from "../../services/reviewService";
 import type { ApiError } from "../../types";
 import { MAX_REVIEW_LENGTH, validateReview } from "../../utils/validation";
-import { useAuth } from "../auth/AuthContext";
+import { useAuth } from "../../hooks/useAuth";
 import { StarInput } from "./StarRating";
 
 interface Props {
@@ -77,7 +77,7 @@ export default function ReviewForm({ providerId, onSubmitted, embedded = false }
     <>
       {success && (
         <p className="status-line mb-3" role="status">
-          Thank you — your review has been submitted.
+          Thank you â€” your review has been submitted.
         </p>
       )}
       {serverError && <div className="alert-error mb-3" role="alert">{serverError}</div>}

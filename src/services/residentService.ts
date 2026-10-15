@@ -5,7 +5,7 @@ import type {
   UpdateProfileInput,
   User,
 } from "../types";
-import { apiClient } from "./apiClient";
+import api from "./api";
 import {
   delay,
   fixtureConversations,
@@ -18,7 +18,7 @@ let devUser: User = { ...fixtureUser };
 /** GET /residents/me/recent-providers */
 export async function getRecentlyViewedProviders(): Promise<ProviderSummary[]> {
   if (USE_DEV_FIXTURES) return delay(fixtureProviders);
-  const { data } = await apiClient.get<ProviderSummary[]>(
+  const { data } = await api.get<ProviderSummary[]>(
     "/residents/me/recent-providers",
   );
   return data;
@@ -29,7 +29,7 @@ export async function getRecentConversations(
   limit = 5,
 ): Promise<ConversationSummary[]> {
   if (USE_DEV_FIXTURES) return delay(fixtureConversations.slice(0, limit));
-  const { data } = await apiClient.get<ConversationSummary[]>("/conversations", {
+  const { data } = await api.get<ConversationSummary[]>("/conversations", {
     params: { limit },
   });
   return data;
@@ -43,7 +43,7 @@ export async function updateResidentProfile(
     devUser = { ...devUser, ...input };
     return delay(devUser);
   }
-  const { data } = await apiClient.patch<User>("/residents/me", input);
+  const { data } = await api.patch<User>("/residents/me", input);
   return data;
 }
 
@@ -56,7 +56,7 @@ export async function uploadAvatar(file: File): Promise<User> {
   }
   const form = new FormData();
   form.append("file", file);
-  const { data } = await apiClient.post<User>("/residents/me/avatar", form, {
+  const { data } = await api.post<User>("/residents/me/avatar", form, {
     headers: { "Content-Type": "multipart/form-data" },
   });
   return data;

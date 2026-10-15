@@ -5,7 +5,7 @@ import type {
   ReviewInput,
   ReviewSummaryData,
 } from "../types";
-import { apiClient } from "./apiClient";
+import api from "./api";
 import { delay, fixtureReviews } from "./devFixtures";
 
 let devReviews: Review[] = [...fixtureReviews];
@@ -35,7 +35,7 @@ export async function getProviderReviews(
       total: list.length,
     });
   }
-  const { data } = await apiClient.get<PaginatedResponse<Review>>(
+  const { data } = await api.get<PaginatedResponse<Review>>(
     `/providers/${encodeURIComponent(providerId)}/reviews`,
     { params: { page, pageSize } },
   );
@@ -47,13 +47,17 @@ export async function getReviewSummary(
   providerId: string,
 ): Promise<ReviewSummaryData> {
   if (USE_DEV_FIXTURES) return delay(devSummary(providerId));
-  const { data } = await apiClient.get<ReviewSummaryData>(
+  const { data } = await api.get<ReviewSummaryData>(
     `/providers/${encodeURIComponent(providerId)}/reviews/summary`,
   );
   return data;
 }
 
-
+/**
+ * POST /providers/:providerId/reviews
+ * The backend decides eligibility. A 409 means the resident already reviewed
+ * this provider; a 403 means they are not eligible.
+ */
 export async function submitReview(
   providerId: string,
   input: ReviewInput,
@@ -71,7 +75,7 @@ export async function submitReview(
     devReviews = [review, ...devReviews];
     return delay(review);
   }
-  const { data } = await apiClient.post<Review>(
+  const { data } = await api.post<Review>(
     `/providers/${encodeURIComponent(providerId)}/reviews`,
     input,
   );
@@ -83,11 +87,11 @@ export async function getMyReviews(): Promise<Review[]> {
   if (USE_DEV_FIXTURES) {
     return delay(devReviews.filter((r) => r.reviewerId === "dev-resident-1"));
   }
-  const { data } = await apiClient.get<Review[]>("/residents/me/reviews");
+  const { data } = await api.get<Review[]>("/residents/me/reviews");
   return data;
 }
 
-/** PATCH /reviews/:reviewId (to be confirmed: may not be supported) */
+/** PATCH /reviews/:reviewId (to be confirmed with backend) */
 export async function updateReview(
   reviewId: string,
   input: ReviewInput,
@@ -98,18 +102,18 @@ export async function updateReview(
     );
     return delay(devReviews.find((r) => r.id === reviewId) as Review);
   }
-  const { data } = await apiClient.patch<Review>(
+  const { data } = await api.patch<Review>(
     `/reviews/${encodeURIComponent(reviewId)}`,
     input,
   );
   return data;
 }
 
-/** DELETE /reviews/:reviewId (to be confirmed: may not be supported) */
+/** DELETE /reviews/:reviewId (to be confirmed with backend) */
 export async function deleteReview(reviewId: string): Promise<void> {
   if (USE_DEV_FIXTURES) {
     devReviews = devReviews.filter((r) => r.id !== reviewId);
     return delay(undefined);
   }
-  await apiClient.delete(`/reviews/${encodeURIComponent(reviewId)}`);
+  await api.delete(`/reviews/${encodeURIComponent(reviewId)}`);
 }

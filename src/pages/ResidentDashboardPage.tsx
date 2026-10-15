@@ -4,7 +4,7 @@ import Eyebrow from "../components/Eyebrow";
 import StatCard from "../components/StatCard";
 import FeatureLink from "../components/FeatureLink";
 import { FEATURES } from "../config/features";
-import { useAuth } from "../features/auth/AuthContext";
+import { useAuth } from "../hooks/useAuth";
 import RecentConversations from "../features/resident/RecentConversations";
 import RecentProviders from "../features/resident/RecentProviders";
 
@@ -62,13 +62,13 @@ export default function ResidentDashboardPage() {
 
       <div className="row g-3 mb-5">
         <div className="col-12 col-md-4">
-          <StatCard value="5" label="Providers viewed" />
+          <StatCard value="-" label="Providers viewed" />
         </div>
         <div className="col-12 col-md-4">
-          <StatCard value="22" label="Reviews written" />
+          <StatCard value="-" label="Reviews written" />
         </div>
         <div className="col-12 col-md-4">
-          <StatCard value="uli bho!" label="Conversations" />
+          <StatCard value="-!" label="Conversations" />
         </div>
       </div>
 
