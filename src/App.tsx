@@ -1,14 +1,15 @@
-import { BrowserRouter, Navigate, Route, Routes } from 'react-router-dom';
+﻿import { BrowserRouter, Navigate, Route, Routes } from 'react-router-dom';
 
 import Login from './pages/public/Login/Login';
 import Register from './pages/public/Register/Register';
+import ForgotPassword from './pages/public/ForgotPassword/ForgotPassword';
 
 import ResidentLogin from './pages/resident/ResidentLogin';
 import ResidentRegister from './pages/resident/ResidentRegister';
+import { Conversation } from './pages/resident/Conversation/Conversation';
 
 import ProviderLogin from './pages/provider/ProviderLogin';
 import ProviderRegister from './pages/provider/ProviderRegister';
-import ForgotPassword from './pages/public/ForgotPassword/ForgotPassword';
 
 // Resident module (Gaiva)
 import ResidentDashboardPage from './pages/ResidentDashboardPage';
@@ -27,6 +28,10 @@ function App() {
         <Route path="/forgot-password" element={<ForgotPassword />} />
         <Route path="/resident/login" element={<ResidentLogin />} />
         <Route path="/resident/register" element={<ResidentRegister />} />
+
+        {/* Chat / Conversation */}
+        <Route path="/conversation/:providerId" element={<Conversation />} />
+
         <Route path="/provider/login" element={<ProviderLogin />} />
         <Route path="/provider/register" element={<ProviderRegister />} />
 
