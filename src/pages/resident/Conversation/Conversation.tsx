@@ -1,6 +1,7 @@
 import React, { useEffect, useRef, useState } from 'react';
 import { useParams, useNavigate } from 'react-router-dom';
-import type{ Message } from '../../../types/message';
+import type { Message } from '../../../types/message';
+import './Conversation.css';
 
 const FAKE_USER_ID = 'user-1';
 const FAKE_USER_NAME = 'You';
@@ -74,26 +75,22 @@ export const Conversation: React.FC = () => {
   };
 
   return (
-    <div className="container py-4" style={{ maxWidth: 720 }}>
-      <div className="d-flex align-items-center justify-content-between mb-3">
-        <button
-          className="btn btn-sm btn-outline-secondary"
-          onClick={() => navigate(-1)}
-        >
+    <div className="chat-page">
+      {/* Header */}
+      <div className="chat-header">
+        <button className="chat-back-btn" onClick={() => navigate(-1)}>
           ← Back
         </button>
-        <div className="text-center">
-          <div className="fw-bold">Rapid Flow Plumbing</div>
-          <small className="text-success">● Online</small>
+        <div className="chat-header-center">
+          <div className="chat-provider-name">Rapid Flow Plumbing</div>
+          <small className="chat-status">● Online</small>
         </div>
-        <div style={{ width: 60 }} />
+        <div className="chat-header-spacer" />
       </div>
 
-      <div
-        className="card shadow-sm d-flex flex-column"
-        style={{ height: '70vh', background: '#f6f4ef' }}
-      >
-        <div className="flex-grow-1 p-3" style={{ overflowY: 'auto' }}>
+      {/* Chat card */}
+      <div className="chat-card">
+        <div className="chat-messages">
           {messages.map((m) => {
             const isOwn = m.senderId === FAKE_USER_ID;
             const time = new Date(m.createdAt).toLocaleTimeString([], {
@@ -103,28 +100,20 @@ export const Conversation: React.FC = () => {
             return (
               <div
                 key={m.id}
-                className={`d-flex mb-2 ${
-                  isOwn ? 'justify-content-end' : 'justify-content-start'
+                className={`chat-row ${
+                  isOwn ? 'chat-row--own' : 'chat-row--other'
                 }`}
               >
                 <div
-                  className={`px-3 py-2 rounded-3 shadow-sm ${
-                    isOwn ? 'bg-warning text-dark' : 'bg-white text-dark'
+                  className={`chat-bubble ${
+                    isOwn ? 'chat-bubble--own' : 'chat-bubble--other'
                   }`}
-                  style={{ maxWidth: '70%' }}
                 >
                   {!isOwn && (
-                    <div className="fw-bold small text-muted">
-                      {m.senderName}
-                    </div>
+                    <div className="chat-bubble-sender">{m.senderName}</div>
                   )}
-                  <div>{m.content}</div>
-                  <div
-                    className="text-end small text-muted mt-1"
-                    style={{ fontSize: '0.7rem' }}
-                  >
-                    {time}
-                  </div>
+                  <div className="chat-bubble-content">{m.content}</div>
+                  <div className="chat-bubble-time">{time}</div>
                 </div>
               </div>
             );
@@ -132,20 +121,17 @@ export const Conversation: React.FC = () => {
           <div ref={bottomRef} />
         </div>
 
-        <form
-          onSubmit={handleSend}
-          className="d-flex gap-2 p-3 border-top bg-light"
-        >
+        <form className="chat-input-row" onSubmit={handleSend}>
           <input
             type="text"
-            className="form-control"
+            className="chat-input"
             placeholder="Type a message…"
             value={text}
             onChange={(e) => setText(e.target.value)}
           />
           <button
             type="submit"
-            className="btn btn-warning fw-bold text-dark px-4"
+            className="chat-send-btn"
             disabled={!text.trim()}
           >
             Send
@@ -153,9 +139,7 @@ export const Conversation: React.FC = () => {
         </form>
       </div>
 
-      <div className="text-center text-muted small mt-2">
-        Chatting with provider #{providerId}
-      </div>
+      <div className="chat-footer">Chatting with provider #{providerId}</div>
     </div>
   );
 };
