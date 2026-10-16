@@ -2,13 +2,15 @@
 import { useState, type FormEvent } from 'react';
 import { Link } from 'react-router-dom';
 import './AuthForm.css';
+import { mockUsers } from '../../data/mockUsers';
 
 type AuthFormProps = {
   role: 'resident' | 'provider';
   mode: 'login' | 'register';
 };
 
-export default function AuthForm({ role, mode }: AuthFormProps) {
+export default function AuthForm({ role, mode }: AuthFormProps) { 
+  
   const isRegister = mode === 'register';
   const roleName = role === 'resident' ? 'Resident' : 'Service Provider';
 
@@ -16,7 +18,8 @@ export default function AuthForm({ role, mode }: AuthFormProps) {
   const [error, setError] = useState('');
   const [message, setMessage] = useState('');
 
-  function handleSubmit(event: FormEvent<HTMLFormElement>) {
+  //MAIN FUNCTION TO HANDLE FORM SUBMISSION
+  /*function handleSubmit(event: FormEvent<HTMLFormElement>) {
     event.preventDefault();
     setError('');
     setMessage('');
@@ -35,13 +38,57 @@ export default function AuthForm({ role, mode }: AuthFormProps) {
         ? 'Registration form validated successfully.'
         : 'Login form validated successfully.',
     );
+    
+
+
   }
+    */
+
+  //MAIN FUNCTION TO HANDLE FORM SUBMISSION TO MOCK USERS
+  
+function handleSubmit(event: FormEvent<HTMLFormElement>) {
+  event.preventDefault();
+  setError('');
+  setMessage('');
+
+  const formData = new FormData(event.currentTarget);
+  const email = String(formData.get('email') ?? '').trim();
+  const password = String(formData.get('password') ?? '');
+  const confirmPassword = String(formData.get('confirmPassword') ?? '');
+
+  // Registration form validation
+  if (isRegister) {
+    if (password !== confirmPassword) {
+      setError('Your passwords do not match.');
+      return;
+    }
+
+    setMessage('Registration form validated successfully.');
+    return;
+  }
+
+  // Check login details against our hard-coded test users
+  const matchedUser = mockUsers.find(
+    (user) =>
+      user.email.toLowerCase() === email.toLowerCase() &&
+      user.password === password &&
+      user.role === role,
+  );
+
+  if (!matchedUser) {
+    setError('Invalid email or password for this account type.');
+    return;
+  }
+
+  setMessage(`Welcome, ${matchedUser.name}!`);
+}
+
 
   return (
     <main className="auth-page">
       <section className="auth-card">
         <header className="auth-brand">
-          <div className="auth-logo">S</div>
+          <div className="auth-logo">SD</div>
           <h1>Skillz Directory</h1>
           <p>Find the right skills. Connect with the right people.</p>
         </header>
