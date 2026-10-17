@@ -17,6 +17,10 @@ export default function DirectoryPage({
 }: DirectoryPageProps) {
   const [keyword, setKeyword] = useState("");
   const [category, setCategory] = useState("");
+  const [area, setArea] = useState("All areas");
+  const [sortBy, setSortBy] = useState<"rating" | "reviews" | "name">(
+    "rating",
+  );
   const [showReviews, setShowReviews] = useState(false);
   const [showHelp, setShowHelp] = useState(false);
   const [mobileNavOpen, setMobileNavOpen] = useState(false);
@@ -27,6 +31,11 @@ export default function DirectoryPage({
     provider: Provider;
     service: string;
   } | null>(null);
+
+  const areas = useMemo(
+    () => ["All areas", ...new Set(providers.map((provider) => provider.area))],
+    [providers],
+  );
 
   const listings = useMemo(() => {
     const term = keyword.trim().toLowerCase();
@@ -40,22 +49,54 @@ export default function DirectoryPage({
       )
       .filter(({ provider, service }) => {
         const matchesCategory = !category || provider.category === category;
+        const matchesArea = area === "All areas" || provider.area === area;
         const matchesSearch =
           !term ||
-          `${service} ${provider.name} ${provider.category}`
+          `${service} ${provider.name} ${provider.category} ${provider.area}`
             .toLowerCase()
             .includes(term);
 
-        return matchesCategory && matchesSearch;
+        return matchesCategory && matchesArea && matchesSearch;
       })
-      .sort((a, b) => b.provider.rating - a.provider.rating);
-  }, [keyword, category, providers]);
+      .sort((a, b) => {
+        if (sortBy === "reviews") {
+          return b.provider.reviews - a.provider.reviews;
+        }
+
+        if (sortBy === "name") {
+          return a.service.localeCompare(b.service) || a.provider.name.localeCompare(b.provider.name);
+        }
+
+        return b.provider.rating - a.provider.rating;
+      });
+  }, [keyword, category, area, sortBy, providers]);
 
   const visibleProviders = useMemo(() => {
     const ids = new Set(listings.map(({ provider }) => provider.id));
 
     return providers.filter((provider) => ids.has(provider.id));
   }, [listings, providers]);
+
+  const summary = useMemo(() => {
+    const averageRating =
+      listings.length > 0
+        ? listings.reduce((total, item) => total + item.provider.rating, 0) /
+          listings.length
+        : 0;
+
+    return {
+      totalServices: listings.length,
+      totalProviders: new Set(listings.map(({ provider }) => provider.id)).size,
+      averageRating,
+      topArea:
+        Object.entries(
+          listings.reduce<Record<string, number>>((accumulator, item) => {
+            accumulator[item.provider.area] = (accumulator[item.provider.area] ?? 0) + 1;
+            return accumulator;
+          }, {}),
+        ).sort(([, countA], [, countB]) => countB - countA)[0],
+    };
+  }, [listings]);
 
   return (
     <>
@@ -153,7 +194,7 @@ export default function DirectoryPage({
               setKeyword(keyword.trim());
             }}
           >
-            <label className="form-label mb-0 text-secondary">FILTER:</label>
+            <label className="form-label mb-0 text-secondary"></label>
             <input
               className="form-control search-input"
               value={keyword}
@@ -170,27 +211,86 @@ export default function DirectoryPage({
       </section>
 
       <main className="container py-4">
-        <div className="d-flex flex-wrap gap-2 mb-4">
-          <button
-            className={`btn ${
-              category === "" ? "btn-dark" : "btn-outline-dark"
-            }`}
-            onClick={() => setCategory("")}
-          >
-            All services
-          </button>
+        <div className="directory-summary-card mb-4">
+          <div className="directory-summary-item">
+            <span className="directory-summary-label">Services</span>
+            <strong>{summary.totalServices}</strong>
+          </div>
+          <div className="directory-summary-item">
+            <span className="directory-summary-label">Providers</span>
+            <strong>{summary.totalProviders}</strong>
+          </div>
+          <div className="directory-summary-item">
+            <span className="directory-summary-label">Avg rating</span>
+            <strong>
+              {summary.averageRating > 0
+                ? summary.averageRating.toFixed(1)
+                : "—"}
+            </strong>
+          </div>
+          <div className="directory-summary-item">
+            <span className="directory-summary-label">Top area</span>
+            <strong>{summary.topArea ? summary.topArea[0] : "—"}</strong>
+          </div>
+        </div>
 
-          {categories.map((trade) => (
+        <div className="directory-filter-bar mb-4">
+          <div className="d-flex flex-wrap gap-2 align-items-center">
             <button
-              key={trade}
               className={`btn ${
-                category === trade ? "btn-dark" : "btn-outline-dark"
+                category === "" ? "btn-dark" : "btn-outline-dark"
               }`}
-              onClick={() => setCategory(category === trade ? "" : trade)}
+              onClick={() => setCategory("")}
             >
-              {trade}
+              All services
             </button>
-          ))}
+
+            {categories.map((trade) => (
+              <button
+                key={trade}
+                className={`btn ${
+                  category === trade ? "btn-dark" : "btn-outline-dark"
+                }`}
+                onClick={() => setCategory(category === trade ? "" : trade)}
+              >
+                {trade}
+              </button>
+            ))}
+          </div>
+
+          <div className="directory-tools">
+            <label className="directory-select-label" htmlFor="area-filter">
+              Area
+            </label>
+            <select
+              id="area-filter"
+              className="form-select directory-select"
+              value={area}
+              onChange={(event) => setArea(event.target.value)}
+            >
+              {areas.map((areaOption) => (
+                <option key={areaOption} value={areaOption}>
+                  {areaOption}
+                </option>
+              ))}
+            </select>
+
+            <label className="directory-select-label" htmlFor="sort-filter">
+              Sort by
+            </label>
+            <select
+              id="sort-filter"
+              className="form-select directory-select"
+              value={sortBy}
+              onChange={(event) =>
+                setSortBy(event.target.value as "rating" | "reviews" | "name")
+              }
+            >
+              <option value="rating">Top rating</option>
+              <option value="reviews">Most reviewed</option>
+              <option value="name">Service name</option>
+            </select>
+          </div>
         </div>
 
         <section className="mb-5">
@@ -198,7 +298,7 @@ export default function DirectoryPage({
             <div>
               <h2 className="h4 mb-1">Providers in Zomba</h2>
               <p className="text-secondary small mb-0">
-                Sample provider locations for demonstration.
+                {area === "All areas" ? "Showing all local service areas." : `Focused on ${area}.`}
               </p>
             </div>
             <span className="text-secondary small">
@@ -206,8 +306,24 @@ export default function DirectoryPage({
             </span>
           </div>
 
+          <div className="provider-map-toolbar">
+            <span className="provider-map-toolbar-label">
+              Map view updates with your filters.
+            </span>
+            {selectedProvider ? (
+              <button
+                type="button"
+                className="btn btn-sm btn-outline-dark"
+                onClick={() => setSelectedProvider(null)}
+              >
+                Clear selection
+              </button>
+            ) : null}
+          </div>
+
           <ProviderMap
             providers={visibleProviders}
+            selectedProviderId={selectedProvider?.id ?? null}
             onSelectProvider={setSelectedProvider}
           />
         </section>
