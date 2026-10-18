@@ -42,7 +42,10 @@ export const ChatWindow: React.FC<Props> = ({
 
         <div className="chat-header-center">
           <div className="chat-provider-name">{otherPartyName}</div>
-          <small className="chat-status">● Online</small>
+          {/* Hardcoded demo status */}
+          <small className="chat-status" style={{ color: '#6b6375' }}>
+            ○ Demo Mode
+          </small>
         </div>
 
         <div className="chat-header-spacer" />
