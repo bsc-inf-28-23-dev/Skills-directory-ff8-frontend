@@ -1,3 +1,5 @@
+import { Inbox as ProviderInbox } from './pages/provider/Messages/Inbox';
+import { ProviderConversation } from './pages/provider/Messages/Conversation';
 import { BrowserRouter, Navigate, Route, Routes } from 'react-router-dom';
 
 import Login from './pages/public/Login/Login';
@@ -24,6 +26,8 @@ function App() {
         <Route path="/resident/register" element={<ResidentRegister />} />
 
         {/* Chat / Conversation */}
+        <Route path="/provider/messages" element={<ProviderInbox />} />
+        <Route path="/provider/conversation/:residentId" element={<ProviderConversation />} /> 
         <Route path="/conversation/:providerId" element={<Conversation />} />
 
         <Route path="/provider/login" element={<ProviderLogin />} />
