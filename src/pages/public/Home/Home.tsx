@@ -1,4 +1,3 @@
-
 import { useState } from 'react'
 import CategoryCard from '../../../components/CategoryCard/CategoryCard'
 import './Home.css'
@@ -44,6 +43,7 @@ const categories = [
 
 function Home() {
   const [search, setSearch] = useState('')
+  const [showAbout, setShowAbout] = useState(false)
 
   function handleSearch(event: React.FormEvent<HTMLFormElement>) {
     event.preventDefault()
@@ -52,9 +52,12 @@ function Home() {
 
     if (!query) return
 
-   
-window.location.href = '/search-results?search=' + encodeURIComponent(query)
+    window.location.href =
+      '/search-results?search=' + encodeURIComponent(query)
+  }
 
+  function handleAboutClick() {
+    setShowAbout((previous) => !previous)
   }
 
   return (
@@ -73,13 +76,50 @@ window.location.href = '/search-results?search=' + encodeURIComponent(query)
           <a className="nav-active" href="/">
             Home
           </a>
+
           <a href="#categories">Categories</a>
-          <a href="/login">Login</a>
-          <a className="nav-register" href="/register">
-            Register
+
+          <button
+            type="button"
+            className="nav-about"
+            onClick={handleAboutClick}
+            aria-expanded={showAbout}
+            aria-controls="about-section"
+          >
+            About
+          </button>
+
+          <a className="nav-login" href="/login">
+            Login
           </a>
         </nav>
       </header>
+
+      {showAbout && (
+        <section
+          id="about-section"
+          className="about-content"
+          aria-labelledby="about-heading"
+        >
+          <h2 id="about-heading">About Us</h2>
+
+          <p>
+            We are a community-based platform bridging the gap
+            between residents and service providers. Our goal is to
+            make it easy for every household to find a trusted
+            electrician, plumber, mechanic, and other professionals
+            in minutes.
+          </p>
+
+          <button
+            type="button"
+            className="about-close"
+            onClick={() => setShowAbout(false)}
+          >
+            Close
+          </button>
+        </section>
+      )}
 
       <section className="home-hero">
         <div className="hero-content">
