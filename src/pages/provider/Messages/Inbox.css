@@ -1,0 +1,129 @@
+.inbox-page {
+  max-width: 720px;
+  margin: 0 auto;
+  padding: 1.5rem 1rem;
+}
+
+.inbox-header {
+  margin-bottom: 1.5rem;
+}
+
+.inbox-title {
+  font-weight: 700;
+  text-transform: uppercase;
+  letter-spacing: -0.5px;
+  color: #1a1a1a;
+  font-size: 1.75rem;
+  margin: 0;
+}
+
+.inbox-subtitle {
+  color: #6b6375;
+  font-size: 0.9rem;
+  margin: 0.25rem 0 0;
+}
+
+.inbox-list {
+  display: flex;
+  flex-direction: column;
+  background: #ffffff;
+  border: 1px solid #e5e4e7;
+  border-radius: 0.5rem;
+  overflow: hidden;
+}
+
+.inbox-row {
+  display: flex;
+  align-items: center;
+  gap: 1rem;
+  padding: 1rem 1.25rem;
+  background: transparent;
+  border: none;
+  border-bottom: 1px solid #e5e4e7;
+  cursor: pointer;
+  text-align: left;
+  transition: background 0.15s;
+  font-family: inherit;
+  width: 100%;
+}
+
+.inbox-row:last-child {
+  border-bottom: none;
+}
+
+.inbox-row:hover {
+  background: #fafaf7;
+}
+
+.inbox-avatar {
+  flex-shrink: 0;
+  width: 48px;
+  height: 48px;
+  background: #1a1a1a;
+  color: #ff8c1a;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  font-weight: 700;
+  font-size: 0.9rem;
+  letter-spacing: 0.5px;
+  border-radius: 0.4rem;
+}
+
+.inbox-body {
+  flex: 1;
+  min-width: 0;
+}
+
+.inbox-row-top {
+  display: flex;
+  justify-content: space-between;
+  align-items: baseline;
+  margin-bottom: 0.2rem;
+}
+
+.inbox-name {
+  font-weight: 700;
+  text-transform: uppercase;
+  letter-spacing: 0.3px;
+  color: #1a1a1a;
+  font-size: 0.9rem;
+}
+
+.inbox-time {
+  color: #6b6375;
+  font-size: 0.75rem;
+  flex-shrink: 0;
+}
+
+.inbox-row-bottom {
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+  gap: 0.5rem;
+}
+
+.inbox-preview {
+  color: #6b6375;
+  font-size: 0.85rem;
+  white-space: nowrap;
+  overflow: hidden;
+  text-overflow: ellipsis;
+  flex: 1;
+  min-width: 0;
+}
+
+.inbox-badge {
+  background: #e8462a;
+  color: #ffffff;
+  font-size: 0.7rem;
+  font-weight: 700;
+  min-width: 20px;
+  height: 20px;
+  padding: 0 6px;
+  border-radius: 10px;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  flex-shrink: 0;
+}

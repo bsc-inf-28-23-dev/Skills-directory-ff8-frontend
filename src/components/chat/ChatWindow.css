@@ -1,27 +1,27 @@
-/* 
-   Conversation page — chat UI styles
-   Resident (seeker) ↔ Provider
-   Seeker bubbles: light orange
-   Provider bubbles: black
-    */
+/*
+   Shared ChatWindow styles — used by both resident & provider
+   */
 
 :root {
-  /* Brand tokens — change here to update everywhere */
- --chat-seeker-bg: #ff8c1a;          /* normal orange */
-  --chat-seeker-text: #1a1a1a;
-  --chat-seeker-time: rgba(26, 26, 26, 0.6);
+  /* Resident (Seeker) - Orange */
+  --chat-resident-bg: #ff8c1a;          
+  --chat-resident-text: #1a1a1a;
+  --chat-resident-time: rgba(26, 26, 26, 0.6);
+  --chat-resident-sender: #1a1a1a;
 
-  --chat-provider-bg: #1a1a1a;        /* black for provider */
+  /* Provider - Black */
+  --chat-provider-bg: #1a1a1a;          
   --chat-provider-text: #ffffff;
   --chat-provider-time: rgba(255, 255, 255, 0.65);
-  --chat-provider-sender: #ffb066;    /* sender name in orange */
+  --chat-provider-sender: #ff8c1a;
 
+  /* General UI */
   --chat-bg: #ffffff;
   --chat-page-bg: #fafaf7;
   --chat-text-dark: #1a1a1a;
   --chat-text-muted: #6b6375;
   --chat-border: #e5e4e7;
-  --chat-accent: #e8462a;             /* brand red for buttons/links */
+  --chat-accent: #e8462a;               /* Brand Red for buttons */
   --chat-accent-hover: #cf3b22;
 }
 
@@ -79,7 +79,7 @@
   width: 60px;
 }
 
-/* ---------- Chat card ---------- */
+/* ---------- Chat Card ---------- */
 .chat-card {
   height: 70vh;
   background: var(--chat-bg);
@@ -91,7 +91,7 @@
   overflow: hidden;
 }
 
-/* ---------- Message scroll area ---------- */
+/* ---------- Messages Area ---------- */
 .chat-messages {
   flex: 1;
   padding: 1rem;
@@ -99,7 +99,15 @@
   background: #fdfdfb;
 }
 
-/* ---------- Message rows ---------- */
+.chat-empty {
+  text-align: center;
+  color: var(--chat-text-muted);
+  font-style: italic;
+  padding: 2rem 0;
+  font-size: 0.9rem;
+}
+
+/* ---------- Message Rows & Bubbles ---------- */
 .chat-row {
   display: flex;
   margin-bottom: 0.65rem;
@@ -113,7 +121,6 @@
   justify-content: flex-start;
 }
 
-/* ---------- Bubbles ---------- */
 .chat-bubble {
   max-width: 70%;
   padding: 0.65rem 0.95rem;
@@ -122,25 +129,41 @@
   word-wrap: break-word;
 }
 
-/* Seeker (own) — light orange */
-.chat-bubble--own {
-  background: var(--chat-seeker-bg);
-  color: var(--chat-seeker-text);
+/* --- Resident Bubble (Orange) --- */
+.chat-bubble--resident {
+  background: var(--chat-resident-bg);
+  color: var(--chat-resident-text);
 }
 
-/* Provider — black */
-.chat-bubble--other {
+.chat-bubble--resident .chat-bubble-sender {
+  color: var(--chat-resident-sender);
+}
+
+.chat-bubble--resident .chat-bubble-time {
+  color: var(--chat-resident-time);
+}
+
+/* --- Provider Bubble (Black) --- */
+.chat-bubble--provider {
   background: var(--chat-provider-bg);
   color: var(--chat-provider-text);
 }
 
+.chat-bubble--provider .chat-bubble-sender {
+  color: var(--chat-provider-sender);
+}
+
+.chat-bubble--provider .chat-bubble-time {
+  color: var(--chat-provider-time);
+}
+
+/* --- Bubble Text --- */
 .chat-bubble-sender {
   font-weight: 700;
   font-size: 0.72rem;
   text-transform: uppercase;
   letter-spacing: 0.5px;
   margin-bottom: 0.2rem;
-  color: var(--chat-provider-sender);
 }
 
 .chat-bubble-content {
@@ -154,15 +177,7 @@
   margin-top: 0.3rem;
 }
 
-.chat-bubble--own .chat-bubble-time {
-  color: var(--chat-seeker-time);
-}
-
-.chat-bubble--other .chat-bubble-time {
-  color: var(--chat-provider-time);
-}
-
-/* ---------- Input row ---------- */
+/* ---------- Input Row ---------- */
 .chat-input-row {
   display: flex;
   gap: 0.5rem;
