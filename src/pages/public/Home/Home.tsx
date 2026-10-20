@@ -1,4 +1,5 @@
-import { useState } from 'react'
+
+import { useState, type FormEvent } from 'react'
 import CategoryCard from '../../../components/CategoryCard/CategoryCard'
 import './Home.css'
 
@@ -8,36 +9,48 @@ const categories = [
     description:
       'Find professionals who help with vehicle repairs and maintenance.',
     symbol: 'M',
+    image: '/images/mechanics.jpg',
+    imageAlt: 'African mechanic repairing a vehicle',
   },
   {
     name: 'Plumbers',
     description:
       'Find help with pipes, taps, water systems and plumbing repairs.',
     symbol: 'P',
+    image: '/images/plumbers.jpg',
+    imageAlt: 'African woman plumber repairing water pipes',
   },
   {
     name: 'Electricians',
     description:
       'Find professionals for electrical installations and repairs.',
     symbol: 'E',
+    image: '/images/electricians.jpg',
+    imageAlt: 'African woman electrician working on an electrical panel',
   },
   {
     name: 'Carpenters',
     description:
       'Find help with furniture, doors, woodwork and carpentry.',
     symbol: 'C',
+    image: '/images/carpenters.jpg',
+    imageAlt: 'African carpenter working with wood',
   },
   {
     name: 'Painters',
     description:
       'Find professionals for painting and decorating projects.',
     symbol: 'P',
+    image: '/images/painters.jpg',
+    imageAlt: 'African woman painting an interior wall',
   },
   {
     name: 'Cleaners',
     description:
       'Find help with home and general cleaning services.',
     symbol: 'C',
+    image: '/images/cleaners.jpg',
+    imageAlt: 'African woman professional cleaner at work',
   },
 ]
 
@@ -45,7 +58,7 @@ function Home() {
   const [search, setSearch] = useState('')
   const [showAbout, setShowAbout] = useState(false)
 
-  function handleSearch(event: React.FormEvent<HTMLFormElement>) {
+  function handleSearch(event: FormEvent<HTMLFormElement>) {
     event.preventDefault()
 
     const query = search.trim()
@@ -107,7 +120,7 @@ function Home() {
             We are a community-based platform bridging the gap
             between residents and service providers. Our goal is to
             make it easy for every household to find a trusted
-            electrician, plumber, mechanic, and other professionals
+            electrician, plumber, mechanic and other professionals
             in minutes.
           </p>
 
@@ -189,6 +202,8 @@ function Home() {
               name={category.name}
               description={category.description}
               symbol={category.symbol}
+              image={category.image}
+              imageAlt={category.imageAlt}
             />
           ))}
         </div>
