@@ -1,11 +1,5 @@
-
 .home-page {
   min-height: 100vh;
-  background: #ffffff;
-  color: #111827;
-  font-family: Arial, sans-serif;
-
-   min-height: 100vh;
   padding-top: 73px;
   background: #ffffff;
   color: #111827;
@@ -60,7 +54,6 @@
   display: flex;
   align-items: center;
   gap: 25px;
-
 }
 
 .home-nav a,
@@ -163,6 +156,7 @@
   line-height: 1.8;
 }
 
+/* Search bar */
 .home-search {
   max-width: 620px;
   margin: 28px auto 0;

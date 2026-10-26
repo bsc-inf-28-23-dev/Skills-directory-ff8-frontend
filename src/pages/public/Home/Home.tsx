@@ -1,4 +1,3 @@
-
 import { useState, type FormEvent } from 'react'
 import CategoryCard from '../../../components/CategoryCard/CategoryCard'
 import './Home.css'
@@ -9,50 +8,73 @@ const categories = [
     description:
       'Find professionals who help with vehicle repairs and maintenance.',
     symbol: 'M',
-    image: '/images/mechanics.jpg',
-    imageAlt: 'African mechanic repairing a vehicle',
+    image:
+      'https://images.pexels.com/photos/4439588/pexels-photo-4439588.jpeg?auto=compress&cs=tinysrgb&w=1200',
+    imageAlt: 'Mechanic repairing a vehicle in a workshop',
   },
   {
     name: 'Plumbers',
     description:
       'Find help with pipes, taps, water systems and plumbing repairs.',
     symbol: 'P',
-    image: '/images/plumbers.jpg',
-    imageAlt: 'African woman plumber repairing water pipes',
+    image:
+      'https://images.pexels.com/photos/8486975/pexels-photo-8486975.jpeg?auto=compress&cs=tinysrgb&w=1200',
+    imageAlt: 'Professional plumber ready to work',
   },
   {
     name: 'Electricians',
     description:
       'Find professionals for electrical installations and repairs.',
     symbol: 'E',
-    image: '/images/electricians.jpg',
-    imageAlt: 'African woman electrician working on an electrical panel',
+    image:
+      'https://images.pexels.com/photos/34526423/pexels-photo-34526423.jpeg?auto=compress&cs=tinysrgb&w=1200',
+    imageAlt: 'Technician working on an electrical panel',
   },
   {
     name: 'Carpenters',
     description:
       'Find help with furniture, doors, woodwork and carpentry.',
     symbol: 'C',
-    image: '/images/carpenters.jpg',
-    imageAlt: 'African carpenter working with wood',
+    image:
+      'https://images.pexels.com/photos/16850260/pexels-photo-16850260.jpeg?auto=compress&cs=tinysrgb&w=1200',
+    imageAlt: 'Carpenter working with wood in a workshop',
   },
   {
     name: 'Painters',
     description:
       'Find professionals for painting and decorating projects.',
     symbol: 'P',
-    image: '/images/painters.jpg',
-    imageAlt: 'African woman painting an interior wall',
+    image:
+      'https://images.pexels.com/photos/6474471/pexels-photo-6474471.jpeg?auto=compress&cs=tinysrgb&w=1200',
+    imageAlt: 'Painter applying paint to an interior wall',
   },
   {
-    name: 'Cleaners',
-    description:
-      'Find help with home and general cleaning services.',
-    symbol: 'C',
-    image: '/images/cleaners.jpg',
-    imageAlt: 'African woman professional cleaner at work',
+    
+  name: 'Cleaners',
+  description:
+    'Find help with home and general cleaning services.',
+  symbol: 'C',
+  image:
+    'https://thekampalaguy.com/assets/hero-cleaning-Dnmhbl_n.png',
+  imageAlt:
+    'African woman professional cleaner vacuuming a sofa in a living room',
+
   },
 ]
+
+function goToSearchResults(
+  query: string,
+  coordinates?: GeolocationCoordinates,
+) {
+  const params = new URLSearchParams({ search: query })
+
+  if (coordinates) {
+    params.set('lat', String(coordinates.latitude))
+    params.set('lng', String(coordinates.longitude))
+  }
+
+  window.location.href = `/search-results?${params.toString()}`
+}
 
 function Home() {
   const [search, setSearch] = useState('')
@@ -65,8 +87,24 @@ function Home() {
 
     if (!query) return
 
-    window.location.href =
-      '/search-results?search=' + encodeURIComponent(query)
+    if (!navigator.geolocation) {
+      goToSearchResults(query)
+      return
+    }
+
+    navigator.geolocation.getCurrentPosition(
+      (position) => {
+        goToSearchResults(query, position.coords)
+      },
+      () => {
+        goToSearchResults(query)
+      },
+      {
+        enableHighAccuracy: true,
+        timeout: 10000,
+        maximumAge: 5 * 60 * 1000,
+      },
+    )
   }
 
   function handleAboutClick() {
@@ -79,10 +117,10 @@ function Home() {
         <a
           className="brand"
           href="/"
-          aria-label="Skills Directory home"
+          aria-label="Skillz Directory home"
         >
           <span className="brand-mark">SD</span>
-          <span>Skills Directory</span>
+          <span>Skillz Directory</span>
         </a>
 
         <nav className="home-nav" aria-label="Main navigation">
@@ -150,7 +188,10 @@ function Home() {
             providers and find the help you need in one convenient place.
           </p>
 
-          <form className="home-search" onSubmit={handleSearch}>
+          <form
+            className="home-search"
+            onSubmit={handleSearch}
+          >
             <label
               className="search-label"
               htmlFor="service-search"
@@ -164,10 +205,14 @@ function Home() {
                 type="search"
                 placeholder="e.g. plumber, mechanic..."
                 value={search}
-                onChange={(event) => setSearch(event.target.value)}
+                onChange={(event) =>
+                  setSearch(event.target.value)
+                }
               />
 
-              <button type="submit">Search</button>
+              <button type="submit">
+                Search
+              </button>
             </div>
           </form>
 
@@ -183,7 +228,9 @@ function Home() {
         aria-labelledby="categories-heading"
       >
         <div className="section-heading">
-          <p className="section-label">FIND WHAT YOU NEED</p>
+          <p className="section-label">
+            FIND WHAT YOU NEED
+          </p>
 
           <h2 id="categories-heading">
             Explore service categories
@@ -226,7 +273,9 @@ function Home() {
           Skills Directory
         </a>
 
-        <p>Connecting residents with service providers.</p>
+        <p>
+          Connecting residents with service providers.
+        </p>
 
         <p className="copyright">
           © {new Date().getFullYear()} Skills Directory
