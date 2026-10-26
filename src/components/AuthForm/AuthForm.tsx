@@ -56,7 +56,7 @@ export default function AuthForm({ role, mode }: AuthFormProps) {
     if (matchedUser.role === 'resident') {
       navigate('/resident/dashboard');
     } else {
-      navigate('/provider/dashboard');
+      navigate('/services/providers/rapid-flow');
     }
   }
 

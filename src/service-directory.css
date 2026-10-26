@@ -110,7 +110,6 @@
   font-weight: 700;
 }
 
-#service-directory .brand-name,
 #service-directory .hero-title,
 #service-directory .modal-title {
   font-family: var(--font-heading);
@@ -140,110 +139,6 @@
 
 #service-directory main {
   flex: 1;
-}
-
-/* The sticky header needs to stay above the map and page content. */
-#service-directory .site-header {
-  position: sticky;
-  top: 0;
-  z-index: 1000;
-
-  background: rgba(255, 255, 255, 0.97);
-  border-bottom: 1px solid var(--border);
-
-  backdrop-filter: blur(12px);
-  -webkit-backdrop-filter: blur(12px);
-}
-
-#service-directory .site-header .navbar {
-  min-height: 72px;
-  padding-block: 10px;
-}
-
-#service-directory .site-header .page-container {
-  gap: 20px;
-}
-
-#service-directory .brand-mark {
-  display: grid;
-  flex-shrink: 0;
-  place-items: center;
-
-  width: 32px;
-  height: 32px;
-
-  background: var(--primary);
-  color: #FFFFFF;
-
-  font-size: 18px;
-  font-weight: 800;
-
-  transform: skewX(-8deg);
-}
-
-#service-directory .brand-name {
-  font-size: 21px;
-  line-height: 1.1;
-  white-space: nowrap;
-}
-
-#service-directory .site-nav {
-  display: flex;
-  align-items: center;
-  justify-content: center;
-  gap: 4px;
-}
-
-#service-directory .site-nav .nav-link {
-  position: relative;
-
-  display: inline-flex;
-  align-items: center;
-  justify-content: center;
-
-  min-height: 42px;
-  padding: 10px 12px;
-
-  border: 0;
-  background: transparent;
-  color: var(--foreground);
-
-  font-size: 10px;
-  font-weight: 800;
-  letter-spacing: 0.035em;
-  text-transform: uppercase;
-
-  white-space: nowrap;
-  transition:
-    color var(--transition-fast),
-    background var(--transition-fast);
-}
-
-#service-directory .site-nav .nav-link:hover,
-#service-directory .site-nav .nav-link.active {
-  color: var(--primary);
-}
-
-#service-directory .site-nav .nav-link::after {
-  position: absolute;
-  right: 12px;
-  bottom: 4px;
-  left: 12px;
-
-  height: 2px;
-
-  background: var(--primary);
-  content: '';
-
-  transform: scaleX(0);
-  transform-origin: left;
-
-  transition: transform var(--transition-fast);
-}
-
-#service-directory .site-nav .nav-link:hover::after,
-#service-directory .site-nav .nav-link.active::after {
-  transform: scaleX(1);
 }
 
 #service-directory .btn {
@@ -290,7 +185,6 @@
   color: #FFFFFF;
 }
 
-#service-directory .provider-cta,
 #service-directory .btn-provider-outline {
   border: 1px solid var(--primary);
   background: transparent;
@@ -301,12 +195,6 @@
   text-transform: uppercase;
 }
 
-#service-directory .provider-cta {
-  padding: 11px 14px;
-  white-space: nowrap;
-}
-
-#service-directory .provider-cta:hover,
 #service-directory .btn-provider-outline:hover {
   border-color: var(--primary);
   background: var(--primary);
@@ -839,64 +727,6 @@
     padding-inline: 22px;
   }
 
-  #service-directory .site-header .navbar {
-    min-height: 66px;
-    position: relative;
-  }
-
-  #service-directory .site-header .page-container {
-    flex-wrap: wrap;
-  }
-
-  #service-directory .brand-name {
-    font-size: 19px;
-  }
-
-  #service-directory .site-nav .nav-link {
-    padding-inline: 8px;
-    font-size: 9px;
-  }
-
-  #service-directory .nav-toggle {
-    display: inline-flex;
-    align-items: center;
-    justify-content: center;
-    width: 38px;
-    height: 38px;
-    border: 1px solid var(--border);
-    border-radius: 0;
-    background: var(--surface);
-    color: var(--foreground);
-    font-size: 18px;
-  }
-
-  #service-directory .site-nav {
-    display: none;
-  }
-
-  #service-directory .site-nav.is-open {
-    display: flex;
-    order: 4;
-    flex: 0 0 100%;
-    align-items: stretch;
-    flex-direction: column;
-    gap: 0;
-    padding-block: 8px;
-    border-top: 1px solid var(--border);
-    background: var(--surface);
-  }
-
-  #service-directory .site-nav .nav-link {
-    justify-content: flex-start;
-    min-height: 44px;
-    padding: 10px 6px;
-    text-align: left;
-  }
-
-  #service-directory .site-nav .nav-link::after {
-    display: none;
-  }
-
   #service-directory .hero-section {
     padding-block: 52px 44px;
   }
@@ -916,29 +746,6 @@
 
   #service-directory .page-container {
     padding-inline: 18px;
-  }
-
-  #service-directory .site-header .navbar {
-    min-height: 62px;
-  }
-
-  #service-directory .site-header .page-container {
-    gap: 8px;
-  }
-
-  #service-directory .brand-mark {
-    width: 29px;
-    height: 29px;
-    font-size: 16px;
-  }
-
-  #service-directory .brand-name {
-    font-size: 17px;
-  }
-
-  #service-directory .provider-cta {
-    padding: 8px;
-    font-size: 8px;
   }
 
   #service-directory .hero-section {
@@ -1021,15 +828,6 @@
 @media (max-width: 420px) {
   #service-directory .page-container {
     padding-inline: 14px;
-  }
-
-  #service-directory .brand-name {
-    font-size: 15px;
-  }
-
-  #service-directory .provider-cta {
-    padding: 8px;
-    font-size: 8px;
   }
 
   #service-directory .hero-title {
@@ -1368,6 +1166,16 @@
   background: var(--primary-hover);
 }
 
+#service-directory .profile-form-actions {
+  display: flex;
+  gap: 10px;
+  margin-left: auto;
+}
+
+#service-directory .profile-form-actions .btn-brand {
+  flex: 1 1 0;
+}
+
 #service-directory .profile-saved-message {
   margin: 0;
   color: var(--success);
@@ -1552,7 +1360,13 @@
     flex-direction: column;
   }
 
-  #service-directory .profile-form-footer .btn-brand {
+  #service-directory .profile-form-actions {
+    flex-direction: column;
+    width: 100%;
+  }
+
+  #service-directory .profile-form-actions .btn-brand {
+    min-width: 0;
     width: 100%;
   }
 }

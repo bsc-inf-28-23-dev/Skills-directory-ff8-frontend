@@ -1,4 +1,5 @@
 import { useMemo, useState } from "react";
+import { useNavigate } from "react-router-dom";
 
 import ProviderMap from "../components/ProviderMap";
 import ServiceCard from "../components/ServiceCard";
@@ -7,13 +8,11 @@ import type { ServiceProvider } from "../types/serviceProvider";
 interface DirectoryPageProps {
   providers: ServiceProvider[];
   categories: string[];
-  onOpenProfile: (providerId?: string) => void;
 }
 
 export default function DirectoryPage({
   providers,
   categories,
-  onOpenProfile,
 }: DirectoryPageProps) {
   const [keyword, setKeyword] = useState("");
   const [category, setCategory] = useState("");
@@ -23,14 +22,10 @@ export default function DirectoryPage({
   );
   const [showReviews, setShowReviews] = useState(false);
   const [showHelp, setShowHelp] = useState(false);
-  const [mobileNavOpen, setMobileNavOpen] = useState(false);
+  const navigate = useNavigate();
   const [selectedProvider, setSelectedProvider] = useState<ServiceProvider | null>(
     null,
   );
-  const [chatTarget, setChatTarget] = useState<{
-    provider: ServiceProvider;
-    service: string;
-  } | null>(null);
 
   const areas = useMemo(
     () => ["All areas", ...new Set(providers.map((provider) => provider.area))],
@@ -100,81 +95,6 @@ export default function DirectoryPage({
 
   return (
     <>
-      <header className="site-header">
-        <nav className="navbar navbar-expand-lg">
-          <div className="page-container d-flex align-items-center justify-content-between gap-3 w-100">
-            <a
-              href="/services"
-              className="d-flex align-items-center gap-2"
-              aria-label="Skillz Directory home"
-            >
-              <span className="brand-mark">S</span>
-              <span className="brand-name">
-                Skillz<span className="brand-accent">Directory</span>
-              </span>
-            </a>
-
-            <button
-              type="button"
-              className="nav-toggle d-lg-none"
-              aria-label={mobileNavOpen ? "Close navigation" : "Open navigation"}
-              aria-expanded={mobileNavOpen}
-              onClick={() => setMobileNavOpen((open) => !open)}
-            >
-              <span aria-hidden="true">{mobileNavOpen ? "×" : "☰"}</span>
-            </button>
-
-            <div className={`site-nav${mobileNavOpen ? " is-open" : ""}`}>
-              <a
-                className="nav-link active"
-                href="#services"
-                onClick={() => setMobileNavOpen(false)}
-              >
-                Browse services
-              </a>
-              <button
-                className="nav-link border-0 bg-transparent"
-                onClick={() => {
-                  setShowReviews(true);
-                  setMobileNavOpen(false);
-                }}
-              >
-                Reviews
-              </button>
-              <button
-                className="nav-link border-0 bg-transparent"
-                onClick={() => {
-                  setShowHelp(true);
-                  setMobileNavOpen(false);
-                }}
-              >
-                How it works
-              </button>
-              <button
-                type="button"
-                className="nav-link border-0 bg-transparent d-md-none"
-                onClick={() => {
-                  onOpenProfile(providers[0]?.id);
-                  setMobileNavOpen(false);
-                }}
-              >
-                Provider profile
-              </button>
-            </div>
-
-            <div className="d-flex align-items-center gap-2">
-              <button
-                type="button"
-                className="btn provider-cta"
-                onClick={() => onOpenProfile(providers[0]?.id)}
-              >
-                Provider profile
-              </button>
-            </div>
-          </div>
-        </nav>
-      </header>
-
       <section className="hero-section">
         <div className="page-container">
           <h1 className="hero-title">
@@ -211,6 +131,23 @@ export default function DirectoryPage({
       </section>
 
       <main className="container py-4">
+        <div className="d-flex justify-content-end gap-2 mb-4">
+          <button
+            type="button"
+            className="btn btn-outline-dark btn-sm"
+            onClick={() => setShowReviews(true)}
+          >
+            Reviews
+          </button>
+          <button
+            type="button"
+            className="btn btn-outline-dark btn-sm"
+            onClick={() => setShowHelp(true)}
+          >
+            How it works
+          </button>
+        </div>
+
         <div className="directory-summary-card mb-4">
           <div className="directory-summary-item">
             <span className="directory-summary-label">Services</span>
@@ -347,12 +284,8 @@ export default function DirectoryPage({
                   <ServiceCard
                     provider={provider}
                     service={service}
-                    onViewProvider={(provider) => onOpenProfile(provider.id)}
-                    onStartChat={(chatProvider, chatService) =>
-                      setChatTarget({
-                        provider: chatProvider,
-                        service: chatService,
-                      })
+                    onStartChat={(chatProvider) =>
+                      navigate(`/conversation/${chatProvider.id}`)
                     }
                   />
                 </div>
@@ -420,21 +353,6 @@ export default function DirectoryPage({
           </div>
         )}
 
-        {chatTarget && (
-          <div className="alert alert-info mt-4">
-            Chat preview for {chatTarget.provider.name}, regarding{" "}
-            {chatTarget.service}.
-            <button
-              className="btn btn-sm btn-outline-dark ms-3"
-              onClick={() => setChatTarget(null)}
-            >
-              Close
-            </button>
-            <p className="small mb-0 mt-2">
-              Demo only: this message has not been sent to the provider.
-            </p>
-          </div>
-        )}
       </main>
 
       {(showReviews || showHelp) && (
@@ -494,11 +412,10 @@ export default function DirectoryPage({
                     <ol className="mb-0">
                       <li>Browse services and compare local providers.</li>
                       <li>Check ratings and provider details.</li>
-                      <li>Preview a message to the provider.</li>
+                      <li>Open a mock conversation with the provider.</li>
                     </ol>
                     <p className="text-secondary small mt-3 mb-0">
-                      Messages are not delivered; sending them requires a
-                      connected backend.
+                      This local chat demo does not deliver or persist messages.
                     </p>
                   </>
                 )}

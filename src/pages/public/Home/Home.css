@@ -4,7 +4,7 @@
 
 .home-page {
   min-height: 100vh;
-  padding-top: 78px;
+  padding-top: 0;
   background: #ffffff;
   color: #172b3a;
   font-family: Arial, sans-serif;
@@ -22,30 +22,6 @@
 
 .home-page a {
   -webkit-tap-highlight-color: transparent;
-}
-
-/* =========================================
-   NAVIGATION
-========================================= */
-
-.home-header {
-  position: fixed;
-  top: 0;
-  left: 0;
-  right: 0;
-  z-index: 1000;
-
-  display: flex;
-  align-items: center;
-  justify-content: space-between;
-  gap: 24px;
-
-  min-height: 78px;
-  padding: 12px 6%;
-
-  background: #ffffff;
-  border-bottom: 1px solid #f0e8df;
-  box-shadow: 0 2px 12px rgba(23, 43, 58, 0.04);
 }
 
 .brand {
@@ -95,46 +71,6 @@
   color: #66798a;
   font-size: 12px;
   font-weight: 400;
-}
-
-.home-nav {
-  display: flex;
-  align-items: center;
-  gap: 32px;
-}
-
-.home-nav a {
-  display: inline-block;
-  padding: 10px 0;
-
-  color: #263746;
-  font-size: 14px;
-  font-weight: 600;
-  text-decoration: none;
-
-  transition: color 0.2s ease;
-}
-
-.home-nav a:hover,
-.home-nav .nav-active {
-  color: #ff7900;
-}
-
-.home-nav .nav-active {
-  border-bottom: 2px solid #ff7900;
-}
-
-.home-nav .nav-login {
-  padding: 11px 22px;
-  border-radius: 9px;
-
-  background: #ff7900;
-  color: #ffffff;
-}
-
-.home-nav .nav-login:hover {
-  background: #e96d00;
-  color: #ffffff;
 }
 
 /* =========================================
@@ -638,17 +574,8 @@
 ========================================= */
 
 @media (max-width: 950px) {
-  .home-header {
-    padding-right: 4%;
-    padding-left: 4%;
-  }
-
   .brand-text > span {
     font-size: 20px;
-  }
-
-  .home-nav {
-    gap: 20px;
   }
 
   .hero-content {
@@ -694,19 +621,6 @@
 ========================================= */
 
 @media (max-width: 650px) {
-  .home-page {
-    padding-top: 112px;
-  }
-
-  .home-header {
-    flex-direction: column;
-    align-items: flex-start;
-    gap: 8px;
-
-    min-height: 112px;
-    padding: 10px 5%;
-  }
-
   .brand {
     gap: 9px;
   }
@@ -723,23 +637,6 @@
 
   .brand-text small {
     font-size: 10px;
-  }
-
-  .home-nav {
-    display: flex;
-    justify-content: space-between;
-    gap: 12px;
-
-    width: 100%;
-  }
-
-  .home-nav a {
-    padding: 6px 0;
-    font-size: 13px;
-  }
-
-  .home-nav .nav-login {
-    padding: 7px 12px;
   }
 
   /* Hero */

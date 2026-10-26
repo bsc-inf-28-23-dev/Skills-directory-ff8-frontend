@@ -5,14 +5,12 @@ import type { ServiceProvider } from "../types/serviceProvider";
 interface ServiceCardProps {
   provider: ServiceProvider;
   service: string;
-  onViewProvider: (provider: ServiceProvider) => void;
   onStartChat: (provider: ServiceProvider, service: string) => void;
 }
 
 export default function ServiceCard({
   provider,
   service,
-  onViewProvider,
   onStartChat,
 }: ServiceCardProps) {
   const [imageFailed, setImageFailed] = useState(false);
@@ -81,14 +79,6 @@ export default function ServiceCard({
             onClick={() => onStartChat(provider, service)}
           >
             Chat demo
-          </button>
-
-          <button
-            type="button"
-            className="btn btn-provider-outline"
-            onClick={() => onViewProvider(provider)}
-          >
-            View provider
           </button>
         </div>
       </div>

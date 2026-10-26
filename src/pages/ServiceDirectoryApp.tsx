@@ -89,12 +89,6 @@ export default function ServiceDirectoryApp() {
             categories={categories.filter((category) =>
               providerData.some((provider) => provider.category === category),
             )}
-            onOpenProfile={(providerId) => {
-              const destinationId = providerId ?? providerData[0]?.id;
-              if (destinationId) {
-                navigate(`/services/providers/${destinationId}`);
-              }
-            }}
           />
         )}
       </div>

@@ -100,14 +100,6 @@ export default function ProviderProfilePage({
   return (
     <main className="profile-page">
       <div className="page-container">
-        <button
-          type="button"
-          className="btn-provider-outline mb-4"
-          onClick={onBack}
-        >
-          ← Back to service listings
-        </button>
-
         <div className="profile-heading">
           <div>
             <p className="profile-eyebrow">PROVIDER WORKSPACE</p>
@@ -315,9 +307,18 @@ export default function ProviderProfilePage({
                   </p>
                 )}
 
-                <button type="submit" className="btn-brand" disabled={saving}>
-                  {saving ? "Saving..." : "Save changes"}
-                </button>
+                <div className="profile-form-actions">
+                  <button
+                    type="button"
+                    className="btn-brand"
+                    onClick={onBack}
+                  >
+                    Service Listing
+                  </button>
+                  <button type="submit" className="btn-brand" disabled={saving}>
+                    {saving ? "Saving..." : "Save changes"}
+                  </button>
+                </div>
               </div>
             </section>
           </form>

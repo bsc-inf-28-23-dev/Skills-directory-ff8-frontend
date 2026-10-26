@@ -61,38 +61,6 @@ function Home() {
 
   return (
     <main className="home-page">
-      {/* Navigation */}
-      <header className="home-header">
-        <a className="brand" href="/" aria-label="Skillz Directory home">
-          <span className="brand-mark">SD</span>
-
-          <span className="brand-text">
-            <span>
-              Skillz <strong>Directory</strong>
-            </span>
-            <small>Connecting residents with service providers</small>
-          </span>
-        </a>
-
-        <nav className="home-nav" aria-label="Main navigation">
-          <a className="nav-active" href="/">
-            Home
-          </a>
-
-          <a href={SERVICES_PAGE}>
-            Categories
-          </a>
-
-          <a href="#about-section">
-            About
-          </a>
-
-          <a className="nav-login" href="/login">
-            Login
-          </a>
-        </nav>
-      </header>
-
       {/* Hero and location search */}
       <section className="home-hero">
         <div className="hero-content">
