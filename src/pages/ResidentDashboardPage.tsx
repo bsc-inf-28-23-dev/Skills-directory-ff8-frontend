@@ -14,15 +14,13 @@ export default function ResidentDashboardPage() {
 
   const firstName = user.fullName.trim().split(/\s+/)[0];
 
-  const hasProfile = Boolean(
-    user.bio ||
-      user.avatarUrl ||
-      user.location ||
-      user.occupation ||
-      (user.languages && user.languages.length > 0) ||
-      user.gender ||
-      user.dateOfBirth,
-  );
+ const hasProfile = Boolean(
+  user.bio ||
+    user.avatarUrl ||
+    user.location ||
+    user.occupation ||
+    (user.languages && user.languages.length > 0) 
+);
 
   return (
     <div className="page-container py-5">

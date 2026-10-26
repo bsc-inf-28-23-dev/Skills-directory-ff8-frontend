@@ -2,7 +2,7 @@ import { useState, type FormEvent, type ChangeEvent } from "react";
 import { Camera } from "lucide-react";
 import Avatar from "../../components/Avatar";
 import { updateResidentProfile, uploadAvatar } from "../../services/residentService";
-import type { ApiError, Gender, User } from "../../types";
+import type { ApiError, User } from "../../types";
 import {
   MAX_BIO_LENGTH,
   MAX_DISPLAY_NAME_LENGTH,
@@ -18,13 +18,6 @@ interface Props {
   onCancel: () => void;
 }
 
-const GENDER_OPTIONS: { value: Gender; label: string }[] = [
-  { value: "female", label: "Female" },
-  { value: "male", label: "Male" },
-  { value: "other", label: "Other" },
-  { value: "prefer_not_to_say", label: "Prefer not to say" },
-];
-
 export default function ProfileForm({ user, onSaved, onCancel }: Props) {
   const [values, setValues] = useState<ProfileValues>({
     fullName: user.fullName ?? "",
@@ -34,8 +27,6 @@ export default function ProfileForm({ user, onSaved, onCancel }: Props) {
     location: user.location ?? "",
     occupation: user.occupation ?? "",
     languages: (user.languages ?? []).join(", "),
-    gender: user.gender ?? "",
-    dateOfBirth: user.dateOfBirth ?? "",
   });
   const [errors, setErrors] = useState<Partial<Record<keyof ProfileValues, string>>>({});
   const [serverError, setServerError] = useState<string | null>(null);
@@ -109,8 +100,6 @@ export default function ProfileForm({ user, onSaved, onCancel }: Props) {
         location: values.location.trim() || undefined,
         occupation: values.occupation.trim() || undefined,
         languages: languages.length ? languages : undefined,
-        gender: (values.gender || undefined) as Gender | undefined,
-        dateOfBirth: values.dateOfBirth || undefined,
       });
 
       onSaved({ ...updated, avatarUrl: afterAvatar?.avatarUrl ?? updated.avatarUrl });
@@ -135,7 +124,7 @@ export default function ProfileForm({ user, onSaved, onCancel }: Props) {
         </div>
       )}
 
-      {/* -------- Avatar upload -------- */}
+      {/* Avatar upload */}
       <div className="col-12">
         <div className="d-flex align-items-center gap-3">
           <Avatar name={values.fullName || user.fullName} imageUrl={avatarPreview} size={88} />
@@ -261,41 +250,6 @@ export default function ProfileForm({ user, onSaved, onCancel }: Props) {
             disabled={busy}
           />
           <div className="form-text">Separate multiple languages with commas.</div>
-        </div>
-      </div>
-
-      <div className="col-12 col-md-6">
-        <div className="form-field">
-          <label htmlFor="profile-gender">Gender</label>
-          <select
-            id="profile-gender"
-            className={errors.gender ? "is-invalid" : ""}
-            value={values.gender}
-            onChange={(e) => update("gender", e.target.value)}
-            disabled={busy}
-          >
-            <option value="">Prefer not to say</option>
-            {GENDER_OPTIONS.map((g) => (
-              <option key={g.value} value={g.value}>{g.label}</option>
-            ))}
-          </select>
-          {errors.gender && <div className="invalid-feedback d-block">{errors.gender}</div>}
-        </div>
-      </div>
-
-      <div className="col-12 col-md-6">
-        <div className="form-field">
-          <label htmlFor="profile-dob">Date of birth</label>
-          <input
-            id="profile-dob"
-            type="date"
-            className={errors.dateOfBirth ? "is-invalid" : ""}
-            value={values.dateOfBirth}
-            onChange={(e) => update("dateOfBirth", e.target.value)}
-            max={new Date().toISOString().slice(0, 10)}
-            disabled={busy}
-          />
-          {errors.dateOfBirth && <div className="invalid-feedback d-block">{errors.dateOfBirth}</div>}
         </div>
       </div>
 

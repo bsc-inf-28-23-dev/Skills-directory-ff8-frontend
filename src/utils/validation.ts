@@ -10,9 +10,6 @@ export const MAX_DISPLAY_NAME_LENGTH = 40;
 export const MAX_OCCUPATION_LENGTH = 80;
 export const MAX_LOCATION_LENGTH = 120;
 
-const GENDERS = ["female", "male", "other", "prefer_not_to_say"] as const;
-type Gender = (typeof GENDERS)[number];
-
 /** Accepts international (+265...) or local numbers with optional spaces/dashes. */
 export function isValidPhone(value: string): boolean {
   const digits = value.replace(/[\s-]/g, "");
@@ -29,8 +26,6 @@ export interface ProfileValues {
   location: string;
   occupation: string;
   languages: string;
-  gender: string;
-  dateOfBirth: string;
 }
 
 export function validateProfile(
@@ -62,23 +57,6 @@ export function validateProfile(
 
   if (values.occupation.trim().length > MAX_OCCUPATION_LENGTH) {
     errors.occupation = `Occupation must be at most ${MAX_OCCUPATION_LENGTH} characters.`;
-  }
-
-  if (values.gender && !GENDERS.includes(values.gender as Gender)) {
-    errors.gender = "Please choose a valid option.";
-  }
-
-  if (values.dateOfBirth) {
-    const parsed = new Date(values.dateOfBirth);
-    if (Number.isNaN(parsed.getTime())) {
-      errors.dateOfBirth = "Enter a valid date.";
-    } else if (parsed > new Date()) {
-      errors.dateOfBirth = "Date of birth cannot be in the future.";
-    } else {
-      const age = (Date.now() - parsed.getTime()) / (365.25 * 24 * 60 * 60 * 1000);
-      if (age < 13) errors.dateOfBirth = "You must be at least 13 years old.";
-      if (age > 120) errors.dateOfBirth = "Enter a valid date of birth.";
-    }
   }
 
   return errors;

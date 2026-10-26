@@ -1,7 +1,5 @@
 export type UserRole = "resident" | "provider";
 
-export type Gender = "female" | "male" | "other" | "prefer_not_to_say";
-
 export interface User {
   id: string;
   fullName: string;
@@ -17,8 +15,6 @@ export interface User {
   location?: string | null;
   occupation?: string | null;
   languages?: string[] | null;
-  gender?: Gender | null;
-  dateOfBirth?: string | null; // ISO date, YYYY-MM-DD
 }
 
 export interface UpdateProfileInput {
@@ -29,8 +25,6 @@ export interface UpdateProfileInput {
   location?: string;
   occupation?: string;
   languages?: string[];
-  gender?: Gender;
-  dateOfBirth?: string;
 }
 
 export interface ProviderSummary {
