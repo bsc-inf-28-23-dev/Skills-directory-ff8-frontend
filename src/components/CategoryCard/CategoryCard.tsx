@@ -1,3 +1,4 @@
+
 import './CategoryCard.css'
 
 type CategoryCardProps = {
@@ -23,25 +24,27 @@ function CategoryCard({
             src={image}
             alt={imageAlt || name}
             loading="lazy"
-            decoding="async"
           />
         ) : (
-          <div className="category-image-fallback">
+          <div className="category-symbol" aria-hidden="true">
             {symbol}
           </div>
         )}
+
+        <span className="category-card-badge">{name}</span>
       </div>
 
       <div className="category-card-content">
-        <div className="category-card-title">
-          <span className="category-symbol" aria-hidden="true">
-            {symbol}
-          </span>
-
-          <h3>{name}</h3>
-        </div>
+        <h3>{name}</h3>
 
         <p>{description}</p>
+
+        <a
+          className="category-link"
+          href={`/categories?category=${encodeURIComponent(name)}`}
+        >
+          Explore category <span aria-hidden="true">→</span>
+        </a>
       </div>
     </article>
   )
