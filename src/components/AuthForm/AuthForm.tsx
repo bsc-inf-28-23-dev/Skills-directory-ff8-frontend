@@ -1,6 +1,6 @@
 
 import { useState, type FormEvent } from 'react';
-import { Link } from 'react-router-dom';
+import { Link, useNavigate } from 'react-router-dom';
 import './AuthForm.css';
 import { mockUsers } from '../../data/mockUsers';
 
@@ -9,80 +9,56 @@ type AuthFormProps = {
   mode: 'login' | 'register';
 };
 
-export default function AuthForm({ role, mode }: AuthFormProps) { 
-  
+export default function AuthForm({ role, mode }: AuthFormProps) {
   const isRegister = mode === 'register';
   const roleName = role === 'resident' ? 'Resident' : 'Service Provider';
+  const navigate = useNavigate();
 
   const [showPassword, setShowPassword] = useState(false);
   const [error, setError] = useState('');
   const [message, setMessage] = useState('');
 
-  //MAIN FUNCTION TO HANDLE FORM SUBMISSION
-  /*function handleSubmit(event: FormEvent<HTMLFormElement>) {
+  function handleSubmit(event: FormEvent<HTMLFormElement>) {
     event.preventDefault();
     setError('');
     setMessage('');
 
     const formData = new FormData(event.currentTarget);
+    const email = String(formData.get('email') ?? '').trim();
     const password = String(formData.get('password') ?? '');
     const confirmPassword = String(formData.get('confirmPassword') ?? '');
 
-    if (isRegister && password !== confirmPassword) {
-      setError('Your passwords do not match.');
+    // Registration validation
+    if (isRegister) {
+      if (password !== confirmPassword) {
+        setError('Your passwords do not match.');
+        return;
+      }
+
+      setMessage('Registration form validated successfully.');
       return;
     }
 
-    setMessage(
-      isRegister
-        ? 'Registration form validated successfully.'
-        : 'Login form validated successfully.',
+    // Check login credentials against mock users
+    const matchedUser = mockUsers.find(
+      (user) =>
+        user.email.toLowerCase() === email.toLowerCase() &&
+        user.password === password &&
+        user.role === role,
     );
-    
 
-
-  }
-    */
-
-  //MAIN FUNCTION TO HANDLE FORM SUBMISSION TO MOCK USERS
-  
-function handleSubmit(event: FormEvent<HTMLFormElement>) {
-  event.preventDefault();
-  setError('');
-  setMessage('');
-
-  const formData = new FormData(event.currentTarget);
-  const email = String(formData.get('email') ?? '').trim();
-  const password = String(formData.get('password') ?? '');
-  const confirmPassword = String(formData.get('confirmPassword') ?? '');
-
-  // Registration form validation
-  if (isRegister) {
-    if (password !== confirmPassword) {
-      setError('Your passwords do not match.');
+    if (!matchedUser) {
+      setError('Invalid email or password for this account type.');
       return;
     }
 
-    setMessage('Registration form validated successfully.');
-    return;
+    // Navigate to the dashboard for the user's role
+    if (matchedUser.role === 'resident') {
+      navigate('/resident/dashboard');
+    } else {
+      navigate('/provider/dashboard');
+    }
   }
-
-  // Check login details against our hard-coded test users
-  const matchedUser = mockUsers.find(
-    (user) =>
-      user.email.toLowerCase() === email.toLowerCase() &&
-      user.password === password &&
-      user.role === role,
-  );
-
-  if (!matchedUser) {
-    setError('Invalid email or password for this account type.');
-    return;
-  }
-
-  setMessage(`Welcome, ${matchedUser.name}!`);
-}
-
 
   return (
     <main className="auth-page">
@@ -148,6 +124,7 @@ function handleSubmit(event: FormEvent<HTMLFormElement>) {
               minLength={8}
               required
             />
+
             <button
               type="button"
               className="auth-show-password"
@@ -178,12 +155,22 @@ function handleSubmit(event: FormEvent<HTMLFormElement>) {
                 <input type="checkbox" name="rememberMe" />
                 Remember me
               </label>
+
               <Link to="/forgot-password">Forgot password?</Link>
             </div>
           )}
 
-          {error && <p className="auth-error" role="alert">{error}</p>}
-          {message && <p className="auth-success" role="status">{message}</p>}
+          {error && (
+            <p className="auth-error" role="alert">
+              {error}
+            </p>
+          )}
+
+          {message && (
+            <p className="auth-success" role="status">
+              {message}
+            </p>
+          )}
 
           <button className="auth-submit" type="submit">
             {isRegister ? 'Create account' : 'Sign in'}
@@ -191,10 +178,13 @@ function handleSubmit(event: FormEvent<HTMLFormElement>) {
         </form>
 
         <p className="auth-switch">
-          {isRegister ? 'Already have an account?' : "Don't have an account?"}{' '}
-          <a href={isRegister ? '/register' : '/login'}>
+          {isRegister
+            ? 'Already have an account?'
+            : "Don't have an account?"}{' '}
+
+          <Link to={isRegister ? `/${role}/login` : `/${role}/register`}>
             {isRegister ? 'Sign in' : 'Create account'}
-          </a>
+          </Link>
         </p>
 
         <p className="auth-role-note">

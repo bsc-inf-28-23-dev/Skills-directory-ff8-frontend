@@ -20,25 +20,34 @@ export default function Login() {
         <div className="auth-role-options">
           <Link className="auth-role-card" to="/resident/login">
             <span className="auth-role-icon">🏠</span>
+
             <span>
-              <strong>Resident</strong><br />
+              <strong>Resident</strong>
               <small>Find and connect with service providers.</small>
-            </span><br />
-            <span className="auth-role-arrow"></span>
+            </span>
+
+            <span className="auth-role-arrow" aria-hidden="true">
+              →
+            </span>
           </Link>
 
           <Link className="auth-role-card" to="/provider/login">
             <span className="auth-role-icon">🛠️</span>
-            <span><br />
-              <strong>Service Provider</strong><br />
+
+            <span>
+              <strong>Service Provider</strong>
               <small>Showcase your skills and manage your services.</small>
             </span>
-            <span className="auth-role-arrow"></span>
+
+            <span className="auth-role-arrow" aria-hidden="true">
+              →
+            </span>
           </Link>
         </div>
 
         <p className="auth-switch">
-          New to Skillz Directory? <Link to="/register">Create an account</Link>
+          New to Skillz Directory?{' '}
+          <Link to="/register">Create an account</Link>
         </p>
       </section>
     </main>
