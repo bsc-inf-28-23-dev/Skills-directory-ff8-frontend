@@ -1,6 +1,7 @@
 
 import { lazy, Suspense } from 'react';
 import { BrowserRouter, Navigate, Route, Routes } from 'react-router-dom';
+import AppNavigation from './components/AppNavigation';
 
 import Home from './pages/public/Home/Home';
 import Login from './pages/public/Login/Login';
@@ -28,6 +29,7 @@ const ServiceDirectoryApp = lazy(() => import('./pages/ServiceDirectoryApp'));
 function App() {
   return (
     <BrowserRouter>
+      <AppNavigation />
       <Routes>
         {/* Public pages */}
         <Route path="/" element={<Home />} />
