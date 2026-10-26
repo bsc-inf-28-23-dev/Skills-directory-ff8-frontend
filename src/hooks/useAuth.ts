@@ -10,7 +10,7 @@ interface AuthState {
 
 /**
  * Temporary bridge while the real auth flow is wired up.
- * Reads the current user from localStorage; falls back to a dev user.
+ 
  */
 export function useAuth(): AuthState {
   const [user, setUserState] = useState<User | null>(null);
@@ -24,8 +24,8 @@ export function useAuth(): AuthState {
       } else {
         const dev: User = {
           id: "dev-resident-1",
-          fullName: "Sample Resident",
-          email: "sample@example.com",
+          fullName: " Resident",
+          email: "Whitedaniel@gmail.com",
           role: "resident",
         };
         setUserState(dev);
