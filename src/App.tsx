@@ -1,3 +1,4 @@
+import { lazy, Suspense } from 'react';
 import { Inbox as ProviderInbox } from './pages/provider/Messages/Inbox';
 import { ProviderConversation } from './pages/provider/Messages/Conversation';
 import { BrowserRouter, Navigate, Route, Routes } from 'react-router-dom';
@@ -16,6 +17,7 @@ import ProviderRegister from './pages/provider/ProviderRegister';
 import ResidentDashboardPage from './pages/ResidentDashboardPage';
 import ResidentProfilePage from './pages/ResidentProfilePage';
 import ProviderReviewsPage from './pages/ProviderReviewsPage';
+const ServiceDirectoryApp = lazy(() => import('./pages/ServiceDirectoryApp'));
 
 function App() {
   return (
@@ -42,6 +44,16 @@ function App() {
         <Route path="/resident/dashboard" element={<ResidentDashboardPage />} />
         <Route path="/resident/profile" element={<ResidentProfilePage />} />
         <Route path="/reviews/:providerId" element={<ProviderReviewsPage />} />
+
+        {/* Service directory */}
+        <Route
+          path="/services"
+          element={
+            <Suspense fallback={<div className="p-4">Loading services...</div>}>
+              <ServiceDirectoryApp />
+            </Suspense>
+          }
+        />
 
         <Route path="*" element={<Navigate to="/login" replace />} />
       </Routes>
