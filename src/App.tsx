@@ -1,22 +1,26 @@
 
-import { BrowserRouter, Navigate, Route, Routes } from 'react-router-dom'
-import Home from './pages/public/Home/Home'
-import './App.css'
+import { BrowserRouter, Route, Routes } from 'react-router-dom';
+import './App.css';
 
-import Login from './pages/public/Login/Login'
-import Register from './pages/public/Register/Register'
-import ForgotPassword from './pages/public/ForgotPassword/ForgotPassword'
+// Public pages
+import Home from './pages/public/Home/Home';
+import Login from './pages/public/Login/Login';
+import Register from './pages/public/Register/Register';
+import ForgotPassword from './pages/public/ForgotPassword/ForgotPassword';
 
-import ResidentLogin from './pages/resident/ResidentLogin'
-import ResidentRegister from './pages/resident/ResidentRegister'
-import { Conversation } from './pages/resident/Conversation/Conversation'
+// Resident pages
+import ResidentLogin from './pages/resident/ResidentLogin';
+import ResidentRegister from './pages/resident/ResidentRegister';
+import { Conversation } from './pages/resident/Conversation/Conversation';
 
-import ProviderLogin from './pages/provider/ProviderLogin'
-import ProviderRegister from './pages/provider/ProviderRegister'
+// Provider authentication pages
+import ProviderLogin from './pages/provider/ProviderLogin';
+import ProviderRegister from './pages/provider/ProviderRegister';
 
-import ResidentDashboardPage from './pages/ResidentDashboardPage'
-import ResidentProfilePage from './pages/ResidentProfilePage'
-import ProviderReviewsPage from './pages/ProviderReviewsPage'
+// Dashboard and profile pages
+import ResidentDashboardPage from './pages/ResidentDashboardPage';
+import ResidentProfilePage from './pages/ResidentProfilePage';
+import ProviderReviewsPage from './pages/ProviderReviewsPage';
 
 function App() {
   return (
@@ -25,25 +29,22 @@ function App() {
         {/* Landing page */}
         <Route path="/" element={<Home />} />
 
-        {/* Authentication */}
+        {/* Public authentication */}
         <Route path="/login" element={<Login />} />
         <Route path="/register" element={<Register />} />
         <Route path="/forgot-password" element={<ForgotPassword />} />
 
+        {/* Resident authentication */}
         <Route path="/resident/login" element={<ResidentLogin />} />
         <Route path="/resident/register" element={<ResidentRegister />} />
 
-        {/* Conversations */}
+        {/* Resident conversation */}
         <Route
           path="/conversation/:providerId"
           element={<Conversation />}
         />
 
-        {/* Provider pages */}
-        <Route path="/provider/login" element={<ProviderLogin />} />
-        <Route path="/provider/register" element={<ProviderRegister />} />
-
-        {/* Resident pages */}
+        {/* Resident dashboard and profile */}
         <Route
           path="/resident/dashboard"
           element={<ResidentDashboardPage />}
@@ -53,14 +54,13 @@ function App() {
           element={<ResidentProfilePage />}
         />
 
-        {/* Provider reviews */}
-        <Route path="/reviews/:providerId" element={<ProviderReviewsPage />} />
-
-        {/* Unknown routes */}
-        <Route path="*" element={<Navigate to="/" replace />} />
+        {/* Provider pages */}
+        <Route path="/provider/login" element={<ProviderLogin />} />
+        <Route path="/provider/register" element={<ProviderRegister />} />
+        <Route path="/provider/reviews" element={<ProviderReviewsPage />} />
       </Routes>
     </BrowserRouter>
-  )
+  );
 }
 
-export default App
+export default App;
