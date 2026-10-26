@@ -11,18 +11,31 @@ interface AsyncState<T> {
 /** Runs an async loader on mount and whenever its dependencies change. */
 export function useAsync<T>(loader: () => Promise<T>, deps: unknown[] = []): AsyncState<T> {
   const [data, setData] = useState<T | null>(null);
-  const [loading, setLoading] = useState(true);
   const [error, setError] = useState<ApiError | null>(null);
   const [tick, setTick] = useState(0);
   const requestId = useRef(0);
+  const [completedRequest, setCompletedRequest] = useState<{
+    deps: unknown[];
+    tick: number;
+  } | null>(null);
+  const loading =
+    completedRequest === null ||
+    completedRequest.tick !== tick ||
+    completedRequest.deps.length !== deps.length ||
+    completedRequest.deps.some(
+      (dependency, index) => !Object.is(dependency, deps[index]),
+    );
 
   useEffect(() => {
     const id = ++requestId.current;
-    setLoading(true);
-    setError(null);
-    loader()
+    const requestDeps = [...deps];
+    Promise.resolve()
+      .then(loader)
       .then((result) => {
-        if (id === requestId.current) setData(result);
+        if (id === requestId.current) {
+          setData(result);
+          setError(null);
+        }
       })
       .catch((err: unknown) => {
         if (id === requestId.current) {
@@ -38,7 +51,9 @@ export function useAsync<T>(loader: () => Promise<T>, deps: unknown[] = []): Asy
         }
       })
       .finally(() => {
-        if (id === requestId.current) setLoading(false);
+        if (id === requestId.current) {
+          setCompletedRequest({ deps: requestDeps, tick });
+        }
       });
     // eslint-disable-next-line react-hooks/exhaustive-deps
   }, [...deps, tick]);

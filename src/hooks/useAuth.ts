@@ -1,4 +1,4 @@
-import { useCallback, useEffect, useState } from "react";
+import { useCallback, useState } from "react";
 import type { User } from "../types";
 
 interface AuthState {
@@ -13,30 +13,25 @@ interface AuthState {
  
  */
 export function useAuth(): AuthState {
-  const [user, setUserState] = useState<User | null>(null);
-  const [loading, setLoading] = useState(true);
-
-  useEffect(() => {
+  const [user, setUserState] = useState<User | null>(() => {
     try {
       const raw = localStorage.getItem("user");
       if (raw) {
-        setUserState(JSON.parse(raw) as User);
-      } else {
-        const dev: User = {
-          id: "dev-resident-1",
-          fullName: " Resident",
-          email: "Whitedaniel@gmail.com",
-          role: "resident",
-        };
-        setUserState(dev);
-        localStorage.setItem("user", JSON.stringify(dev));
+        return JSON.parse(raw) as User;
       }
+
+      const dev: User = {
+        id: "dev-resident-1",
+        fullName: " Resident",
+        email: "Whitedaniel@gmail.com",
+        role: "resident",
+      };
+      localStorage.setItem("user", JSON.stringify(dev));
+      return dev;
     } catch {
-      /* ignore */
-    } finally {
-      setLoading(false);
+      return null;
     }
-  }, []);
+  });
 
   const setUser = useCallback((next: User) => {
     setUserState(next);
@@ -48,5 +43,5 @@ export function useAuth(): AuthState {
     localStorage.removeItem("user");
   }, []);
 
-  return { user, loading, logout, setUser };
+  return { user, loading: false, logout, setUser };
 }

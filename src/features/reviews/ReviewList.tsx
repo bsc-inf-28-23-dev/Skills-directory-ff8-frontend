@@ -17,28 +17,35 @@ export default function ReviewList({ providerId, refreshKey }: Props) {
   const [reviews, setReviews] = useState<Review[]>([]);
   const [page, setPage] = useState(1);
   const [total, setTotal] = useState(0);
-  const [loading, setLoading] = useState(true);
+  const [loadedRequestKey, setLoadedRequestKey] = useState<string | null>(null);
   const [loadingMore, setLoadingMore] = useState(false);
   const [error, setError] = useState<ApiError | null>(null);
+  const requestKey = JSON.stringify([providerId, refreshKey]);
+  const loading = loadedRequestKey !== requestKey;
 
   const loadFirstPage = useCallback(async () => {
-    setLoading(true);
-    setError(null);
     try {
       const res = await getProviderReviews(providerId, 1, PAGE_SIZE);
       setReviews(res.items);
       setTotal(res.total);
       setPage(1);
+      setError(null);
     } catch (err) {
       setError(err as ApiError);
     } finally {
-      setLoading(false);
+      setLoadedRequestKey(requestKey);
     }
-  }, [providerId]);
+  }, [providerId, requestKey]);
 
   useEffect(() => {
-    void loadFirstPage();
+    void Promise.resolve().then(loadFirstPage);
   }, [loadFirstPage, refreshKey]);
+
+  const retryFirstPage = () => {
+    setLoadedRequestKey(null);
+    setError(null);
+    void loadFirstPage();
+  };
 
   const loadMore = async () => {
     setLoadingMore(true);
@@ -57,7 +64,7 @@ export default function ReviewList({ providerId, refreshKey }: Props) {
 
   if (loading) return <LoadingSpinner label="Loading reviews..." />;
   if (error && reviews.length === 0) {
-    return <ErrorAlert message={error.message} onRetry={loadFirstPage} />;
+    return <ErrorAlert message={error.message} onRetry={retryFirstPage} />;
   }
   if (reviews.length === 0) {
     return (
