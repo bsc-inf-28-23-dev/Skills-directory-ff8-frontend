@@ -7,7 +7,7 @@ import type { ServiceProvider } from "../types/serviceProvider";
 interface DirectoryPageProps {
   providers: ServiceProvider[];
   categories: string[];
-  onOpenProfile: () => void;
+  onOpenProfile: (providerId?: string) => void;
 }
 
 export default function DirectoryPage({
@@ -154,7 +154,7 @@ export default function DirectoryPage({
                 type="button"
                 className="nav-link border-0 bg-transparent d-md-none"
                 onClick={() => {
-                  onOpenProfile();
+                  onOpenProfile(providers[0]?.id);
                   setMobileNavOpen(false);
                 }}
               >
@@ -166,7 +166,7 @@ export default function DirectoryPage({
               <button
                 type="button"
                 className="btn provider-cta"
-                onClick={onOpenProfile}
+                onClick={() => onOpenProfile(providers[0]?.id)}
               >
                 Provider profile
               </button>
@@ -347,7 +347,7 @@ export default function DirectoryPage({
                   <ServiceCard
                     provider={provider}
                     service={service}
-                    onViewProvider={setSelectedProvider}
+                    onViewProvider={(provider) => onOpenProfile(provider.id)}
                     onStartChat={(chatProvider, chatService) =>
                       setChatTarget({
                         provider: chatProvider,

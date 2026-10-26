@@ -17,13 +17,21 @@ import ProviderRegister from './pages/provider/ProviderRegister';
 import ResidentDashboardPage from './pages/ResidentDashboardPage';
 import ResidentProfilePage from './pages/ResidentProfilePage';
 import ProviderReviewsPage from './pages/ProviderReviewsPage';
+const Home = lazy(() => import('./pages/public/Home/Home'));
 const ServiceDirectoryApp = lazy(() => import('./pages/ServiceDirectoryApp'));
 
 function App() {
   return (
     <BrowserRouter>
       <Routes>
-        <Route path="/" element={<Navigate to="/login" replace />} />
+        <Route
+          path="/"
+          element={
+            <Suspense fallback={<div className="p-4">Loading home...</div>}>
+              <Home />
+            </Suspense>
+          }
+        />
 
         {/* Auth — teammates' work */}
         <Route path="/login" element={<Login />} />
@@ -47,7 +55,7 @@ function App() {
 
         {/* Service directory */}
         <Route
-          path="/services"
+          path="/services/*"
           element={
             <Suspense fallback={<div className="p-4">Loading services...</div>}>
               <ServiceDirectoryApp />

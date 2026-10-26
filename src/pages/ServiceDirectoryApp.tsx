@@ -3,21 +3,18 @@ import "leaflet/dist/leaflet.css";
 import "../service-directory.css";
 import { categories, providers } from "../data/provider";
 import { loadProviders, saveProviders } from "../data/providerStorage";
+import { Navigate, useMatch, useNavigate } from "react-router-dom";
 import DirectoryPage from "./DirectoryPage";
 import ProviderProfilePage from "./ProviderProfilepage";
 import type { ServiceProvider } from "../types/serviceProvider";
 
 export default function ServiceDirectoryApp() {
   const [providerData, setProviderData] = useState<ServiceProvider[]>(providers);
-  const [selectedProviderId, setSelectedProviderId] = useState(
-    providers[0]?.id ?? "",
-  );
   const [storageError, setStorageError] = useState("");
-  const [currentPage, setCurrentPage] = useState<"directory" | "profile">(
-    "directory",
-  );
+  const navigate = useNavigate();
+  const profileMatch = useMatch("/services/providers/:providerId");
   const profileProvider = providerData.find(
-    (provider) => provider.id === selectedProviderId,
+    (provider) => provider.id === profileMatch?.params.providerId,
   );
 
   useEffect(() => {
@@ -28,11 +25,6 @@ export default function ServiceDirectoryApp() {
         if (!isCurrent || !storedProviders) return;
 
         setProviderData(storedProviders);
-        setSelectedProviderId((currentId) =>
-          storedProviders.some((provider) => provider.id === currentId)
-            ? currentId
-            : storedProviders[0]?.id ?? "",
-        );
       })
       .catch((error: unknown) => {
         console.error("Could not load saved provider data.", error);
@@ -67,6 +59,10 @@ export default function ServiceDirectoryApp() {
     }
   }
 
+  if (profileMatch && !profileProvider) {
+    return <Navigate to="/services" replace />;
+  }
+
   return (
     <div id="service-directory">
       <div className="app-shell">
@@ -75,15 +71,17 @@ export default function ServiceDirectoryApp() {
             {storageError}
           </div>
         )}
-        {currentPage === "profile" && profileProvider ? (
+        {profileProvider ? (
           <ProviderProfilePage
             key={profileProvider.id}
             provider={profileProvider}
             providers={providerData}
             categories={categories}
-            onBack={() => setCurrentPage("directory")}
+            onBack={() => navigate("/services")}
             onSave={saveProvider}
-            onSelectProvider={setSelectedProviderId}
+            onSelectProvider={(providerId) =>
+              navigate(`/services/providers/${providerId}`)
+            }
           />
         ) : (
           <DirectoryPage
@@ -91,9 +89,11 @@ export default function ServiceDirectoryApp() {
             categories={categories.filter((category) =>
               providerData.some((provider) => provider.category === category),
             )}
-            onOpenProfile={() => {
-              setSelectedProviderId(providerData[0]?.id ?? "");
-              setCurrentPage("profile");
+            onOpenProfile={(providerId) => {
+              const destinationId = providerId ?? providerData[0]?.id;
+              if (destinationId) {
+                navigate(`/services/providers/${destinationId}`);
+              }
             }}
           />
         )}
