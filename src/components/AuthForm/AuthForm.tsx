@@ -29,15 +29,24 @@ export default function AuthForm({ role, mode }: AuthFormProps) {
     const confirmPassword = String(formData.get('confirmPassword') ?? '');
 
     // Registration validation
-    if (isRegister) {
-      if (password !== confirmPassword) {
-        setError('Your passwords do not match.');
+          if (isRegister) {
+        if (password !== confirmPassword) {
+          setError('Your passwords do not match.');
+          return;
+        }
+
+        setMessage('Successfully registered! you may login...');
+
+        setTimeout(() => {
+          navigate(`/${role}/login`, {
+            state: {
+              registrationSuccess: true,
+            },
+          });
+        }, 1500);
+
         return;
       }
-
-      setMessage('Registration form validated successfully.');
-      return;
-    }
 
     // Check login credentials against mock users
     const matchedUser = mockUsers.find(

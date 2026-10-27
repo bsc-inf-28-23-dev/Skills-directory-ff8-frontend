@@ -21,16 +21,17 @@ export default function Register() {
           <Link className="auth-role-card" to="/resident/register">
             <span className="auth-role-icon">🏠</span>
             <span>
-              <strong>Resident</strong><br />
+              <strong>RESIDENT</strong><br />
               <small>Find and connect with service providers.</small>
             </span>
             <span className="auth-role-arrow"></span> <br />
           </Link>
             <br />
+            <br />
           <Link className="auth-role-card" to="/provider/register">
             <span className="auth-role-icon">🛠️</span>
             <span>
-              <strong>Service Provider</strong><br />
+              <strong>SERVICE PROVIDER</strong><br />
               <small>Showcase your skills and manage your services.</small>
             </span>
             <span className="auth-role-arrow"></span>
