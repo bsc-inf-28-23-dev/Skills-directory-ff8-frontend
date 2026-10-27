@@ -1,12 +1,13 @@
 import { BrowserRouter, Navigate, Route, Routes } from 'react-router-dom';
 
 
-import { Navbar } from './components/Navbar/Navbar';
+import AppNavigation from './components/AppNavigation';
 
 
 import Login from './pages/public/Login/Login';
 import Register from './pages/public/Register/Register';
 import ForgotPassword from './pages/public/ForgotPassword/ForgotPassword';
+import Home from './pages/public/Home/Home'; // <--- Import their new Home page
 
 
 import ResidentLogin from './pages/resident/ResidentLogin';
@@ -25,11 +26,12 @@ import ProviderReviewsPage from './pages/ProviderReviewsPage';
 function App() {
   return (
     <BrowserRouter>
-      {/* Global Navbar added here so it shows on all inner pages */}
-      <Navbar /> 
+      {/* Use Friend's Navigation */}
+      <AppNavigation /> 
       
       <Routes>
-        <Route path="/" element={<Navigate to="/login" replace />} />
+        {/* Change the default root to show their new Home page, not Login! */}
+        <Route path="/" element={<Home />} /> 
 
         {/* Auth */}
         <Route path="/login" element={<Login />} />
@@ -51,7 +53,7 @@ function App() {
         <Route path="/reviews/:providerId" element={<ProviderReviewsPage />} />
 
         {/* Fallback */}
-        <Route path="*" element={<Navigate to="/login" replace />} />
+        <Route path="*" element={<Navigate to="/" replace />} />
       </Routes>
     </BrowserRouter>
   );
