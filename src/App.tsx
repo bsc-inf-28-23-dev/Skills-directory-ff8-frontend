@@ -2,7 +2,6 @@
 import { lazy, Suspense } from 'react';
 import { BrowserRouter, Navigate, Route, Routes } from 'react-router-dom';
 import AppNavigation from './components/AppNavigation';
-
 import Home from './pages/public/Home/Home';
 import Login from './pages/public/Login/Login';
 import Register from './pages/public/Register/Register';

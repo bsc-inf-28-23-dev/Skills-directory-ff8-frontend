@@ -1,5 +1,4 @@
 import { useEffect, useState } from "react";
-import "leaflet/dist/leaflet.css";
 import "../service-directory.css";
 import { categories, providers } from "../data/provider";
 import { loadProviders, saveProviders } from "../data/providerStorage";
@@ -40,7 +39,7 @@ export default function ServiceDirectoryApp() {
     };
   }, []);
 
-  async function saveProvider(updatedProvider: ServiceProvider): Promise<boolean> {
+   async function saveProvider(updatedProvider: ServiceProvider): Promise<boolean> {
     const updatedProviders = providerData.map((provider) =>
       provider.id === updatedProvider.id ? updatedProvider : provider,
     );
@@ -57,7 +56,7 @@ export default function ServiceDirectoryApp() {
       );
       return false;
     }
-  }
+  } 
 
   if (profileMatch && !profileProvider) {
     return <Navigate to="/services" replace />;

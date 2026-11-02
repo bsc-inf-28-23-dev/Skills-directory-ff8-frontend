@@ -64,21 +64,13 @@ export default function ServiceCard({
           {provider.area}
         </p>
 
-        <div className="provider-review mb-3">
-          <span aria-hidden="true">★ </span>
-          {provider.rating.toFixed(1)} rating
-          <span className="review-count">
-            {" "}({provider.reviews} reviews)
-          </span>
-        </div>
-
         <div className="provider-actions mt-auto">
           <button
             type="button"
             className="btn btn-brand"
             onClick={() => onStartChat(provider, service)}
           >
-            Chat demo
+            Chat now
           </button>
         </div>
       </div>
