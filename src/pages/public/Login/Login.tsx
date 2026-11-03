@@ -7,7 +7,7 @@ export default function Login() {
     <main className="auth-page">
       <section className="auth-card">
         <div className="auth-brand">
-          <div className="auth-logo">S</div>
+          <div className="auth-logo">SD</div>
           <h1>Skillz Directory</h1>
           <p>Find the right skills. Connect with the right people.</p>
         </div>
@@ -20,34 +20,29 @@ export default function Login() {
         <div className="auth-role-options">
           <Link className="auth-role-card" to="/resident/login">
             <span className="auth-role-icon">🏠</span>
-
             <span>
-              <strong>Resident</strong>
+              <strong>RESIDENT</strong><br />
+      
               <small>Find and connect with service providers.</small>
-            </span>
-
-            <span className="auth-role-arrow" aria-hidden="true">
-              →
-            </span>
+            </span><br />
+            <span className="auth-role-arrow"></span>
           </Link>
 
           <Link className="auth-role-card" to="/provider/login">
-            <span className="auth-role-icon">🛠️</span>
-
+            <span className="auth-role-icon"></span>
             <span>
-              <strong>Service Provider</strong>
+            <br />
+            <br />
+              <strong>🛠️SERVICE PROVIDER</strong><br />
+              
               <small>Showcase your skills and manage your services.</small>
             </span>
-
-            <span className="auth-role-arrow" aria-hidden="true">
-              →
-            </span>
+            <span className="auth-role-arrow"></span>
           </Link>
         </div>
 
         <p className="auth-switch">
-          New to Skillz Directory?{' '}
-          <Link to="/register">Create an account</Link>
+          New to Skillz Directory? <Link to="/register">Create an account</Link>
         </p>
       </section>
     </main>
