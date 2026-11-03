@@ -11,25 +11,29 @@ interface NavigationLink {
 export default function AppNavigation() {
   const { pathname } = useLocation();
   const [menuOpen, setMenuOpen] = useState(false);
+
   const isAuthPage = /\/(login|register|forgot-password)$/.test(pathname);
   const isCompactPage =
     isAuthPage ||
     pathname.startsWith("/conversation/") ||
     pathname.startsWith("/provider/conversation/");
+
   const isProviderArea =
     !isCompactPage &&
     (pathname.startsWith("/provider/") ||
       pathname.startsWith("/services/providers/"));
+
   const isResidentArea =
     !isCompactPage &&
     (pathname.startsWith("/resident/") ||
       pathname.startsWith("/conversation/") ||
       pathname.startsWith("/reviews/"));
+
   const profilePath = pathname.startsWith("/services/providers/")
     ? pathname
     : "/services/providers/rapid-flow";
 
-  const links: NavigationLink[] = isCompactPage
+   const links: NavigationLink[] = isCompactPage
     ? [
         { label: "Home", to: "/", end: true },
         { label: "Services", to: "/services" },
@@ -37,16 +41,19 @@ export default function AppNavigation() {
     : isProviderArea
     ? [
         { label: "Services", to: "/services" },
-        { label: "Messages", to: "/provider/messages" },
+        { label: "Messages", to: "/provider/messages" }, // Provider sees Inbox
         { label: "Profile", to: profilePath },
       ]
     : isResidentArea
       ? [
           { label: "Dashboard", to: "/resident/dashboard" },
           { label: "Services", to: "/services" },
+          // Resident goes straight to the chat with the demo provider
+          { label: "Messages", to: "/conversation/prov-1" }, 
           { label: "Profile", to: "/resident/profile" },
         ]
       : [
+          // Public pages (Home) do NOT have a Messages link
           { label: "Home", to: "/", end: true },
           { label: "Services", to: "/services" },
           { label: "About", to: "/#about-section" },

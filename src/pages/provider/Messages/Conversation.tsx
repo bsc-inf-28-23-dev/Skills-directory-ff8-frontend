@@ -51,7 +51,7 @@ export const ProviderConversation: React.FC = () => {
       otherPartyName={RESIDENT_NAME}
       messages={messages}
       onSend={handleSend}
-      onBack={() => navigate('/provider/messages')}
+      
     />
   );
 };
