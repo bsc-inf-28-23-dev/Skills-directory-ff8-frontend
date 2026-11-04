@@ -1,4 +1,5 @@
-import { useState, type FormEvent } from 'react'
+import { useEffect, useState, type FormEvent } from 'react'
+import { useLocation } from 'react-router-dom'
 import './Home.css'
 
 // IMPORTANT: Change this if your teammate uses a different route.
@@ -44,8 +45,16 @@ function FeatureIcon({ name }: { name: FeatureIconName }) {
 }
 
 function Home() {
+  const { hash } = useLocation()
   const [location, setLocation] = useState('')
   const [showMoreAbout, setShowMoreAbout] = useState(false)
+
+  useEffect(() => {
+    if (!hash) return
+
+    const target = document.getElementById(hash.slice(1))
+    target?.scrollIntoView({ behavior: 'smooth', block: 'start' })
+  }, [hash])
 
   function handleLocationSearch(event: FormEvent<HTMLFormElement>) {
     event.preventDefault()

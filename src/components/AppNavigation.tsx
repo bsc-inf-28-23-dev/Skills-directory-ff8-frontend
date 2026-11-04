@@ -1,5 +1,6 @@
-import { useState } from "react";
+import { useEffect, useState } from "react";
 import { Link, NavLink, useLocation } from "react-router-dom";
+import { useAuth } from "../hooks/useAuth";
 import "./AppNavigation.css";
 
 interface NavigationLink {
@@ -10,8 +11,29 @@ interface NavigationLink {
 
 export default function AppNavigation() {
   const { pathname } = useLocation();
+  const { user } = useAuth();
   const [menuOpen, setMenuOpen] = useState(false);
+  const [aboutActive, setAboutActive] = useState(false);
 
+  useEffect(() => {
+    if (pathname !== "/") return;
+
+    const aboutSection = document.getElementById("about-section");
+    if (!aboutSection) return;
+
+    const observer = new IntersectionObserver(
+      ([entry]) => setAboutActive(entry.isIntersecting),
+      { rootMargin: "-20% 0px -65% 0px" },
+    );
+    observer.observe(aboutSection);
+
+    return () => observer.disconnect();
+  }, [pathname]);
+
+  const handleHomeClick = () => {
+    setMenuOpen(false);
+    window.scrollTo({ top: 0, behavior: "smooth" });
+  };
   const isAuthPage = /\/(login|register|forgot-password)$/.test(pathname);
   const isCompactPage =
     isAuthPage ||
@@ -32,8 +54,10 @@ export default function AppNavigation() {
   const profilePath = pathname.startsWith("/services/providers/")
     ? pathname
     : "/services/providers/rapid-flow";
+  const accountProfilePath =
+    user?.role === "resident" ? "/resident/profile" : profilePath;
 
-   const links: NavigationLink[] = isCompactPage
+  const links: NavigationLink[] = isCompactPage
     ? [
         { label: "Home", to: "/", end: true },
         { label: "Services", to: "/services" },
@@ -67,7 +91,7 @@ export default function AppNavigation() {
         className="app-navigation__brand"
         to="/"
         aria-label="Skillz Directory home"
-        onClick={() => setMenuOpen(false)}
+        onClick={handleHomeClick}
       >
         <span className="app-navigation__mark" aria-hidden="true">
           SD
@@ -99,34 +123,57 @@ export default function AppNavigation() {
               key={link.label}
               to={link.to}
               end={link.end}
-              onClick={() => setMenuOpen(false)}
-              className={({ isActive }) =>
-                `app-navigation__link${isActive ? " is-active" : ""}`
+              onClick={
+                link.label === "Home"
+                  ? handleHomeClick
+                  : () => setMenuOpen(false)
               }
+              className={({ isActive }) => {
+                const isHomeLinkActive =
+                  pathname === "/" &&
+                  (link.label === "About" ? aboutActive : !aboutActive);
+                const isActiveLink =
+                  pathname === "/" &&
+                  (link.label === "Home" || link.label === "About")
+                    ? isHomeLinkActive
+                    : isActive;
+
+                return `app-navigation__link${isActiveLink ? " is-active" : ""}`;
+              }}
             >
               {link.label}
             </NavLink>
           ))}
         </nav>
 
-        {!isProviderArea && !isResidentArea && !isCompactPage && (
-          <div className="app-navigation__actions">
-            <Link
-              className="app-navigation__sign-in"
-              to="/login"
-              onClick={() => setMenuOpen(false)}
-            >
-              Sign in
-            </Link>
+        <div className="app-navigation__actions">
+          {user ? (
             <Link
               className="app-navigation__register"
-              to="/register"
+              to={accountProfilePath}
               onClick={() => setMenuOpen(false)}
             >
-              Register
+              Profile
             </Link>
-          </div>
-        )}
+          ) : (
+            <>
+              <Link
+                className="app-navigation__sign-in"
+                to="/login"
+                onClick={() => setMenuOpen(false)}
+              >
+                Sign in
+              </Link>
+              <Link
+                className="app-navigation__register"
+                to="/register"
+                onClick={() => setMenuOpen(false)}
+              >
+                Register
+              </Link>
+            </>
+          )}
+        </div>
       </div>
     </header>
   );

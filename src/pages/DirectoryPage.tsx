@@ -2,6 +2,7 @@ import { useMemo, useState } from "react";
 import { useNavigate } from "react-router-dom";
 
 import ServiceCard from "../components/ServiceCard";
+import { useAuth } from "../hooks/useAuth";
 import type { ServiceProvider } from "../types/serviceProvider";
 
 interface DirectoryPageProps {
@@ -17,6 +18,7 @@ export default function DirectoryPage({
   const [category, setCategory] = useState("");
   const [area, setArea] = useState("All areas");
   const navigate = useNavigate();
+  const { user } = useAuth();
 
   const areas = useMemo(
     () => ["All areas", ...new Set(providers.map((provider) => provider.area))],
@@ -145,9 +147,13 @@ export default function DirectoryPage({
                   <ServiceCard
                     provider={provider}
                     service={service}
-                    onStartChat={(chatProvider) =>
-                      navigate(`/conversation/${chatProvider.id}`)
-                    }
+                    onStartChat={(chatProvider) => {
+                      const conversationPath = `/conversation/${chatProvider.id}`;
+                      navigate(
+                        user ? conversationPath : "/login",
+                        user ? undefined : { state: { from: conversationPath } },
+                      );
+                    }}
                   />
                 </div>
               ))}

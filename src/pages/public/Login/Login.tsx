@@ -1,8 +1,10 @@
 
-import { Link } from 'react-router-dom';
+import { Link, useLocation } from 'react-router-dom';
 import '../../../components/AuthForm/AuthForm.css';
 
 export default function Login() {
+  const location = useLocation();
+
   return (
     <main className="auth-page">
       <section className="auth-card">
@@ -18,7 +20,11 @@ export default function Login() {
         </div>
 
         <div className="auth-role-options">
-          <Link className="auth-role-card" to="/resident/login">
+          <Link
+            className="auth-role-card"
+            to="/resident/login"
+            state={location.state}
+          >
             <span className="auth-role-icon">🏠</span>
             <span>
               <strong>RESIDENT</strong><br />
@@ -28,7 +34,11 @@ export default function Login() {
             <span className="auth-role-arrow"></span>
           </Link>
 
-          <Link className="auth-role-card" to="/provider/login">
+          <Link
+            className="auth-role-card"
+            to="/provider/login"
+            state={location.state}
+          >
             <span className="auth-role-icon"></span>
             <span>
             <br />

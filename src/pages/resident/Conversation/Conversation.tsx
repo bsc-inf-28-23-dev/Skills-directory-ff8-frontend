@@ -1,23 +1,48 @@
 import React, { useState } from 'react';
-import { useParams, useNavigate } from 'react-router-dom';
+import { Navigate, useParams, useNavigate } from 'react-router-dom';
 import type { Message } from '../../../types/message';
 import { ChatWindow } from '../../../components/chat/ChatWindow';
 import { providers } from '../../../data/provider';
-
-const FAKE_USER_ID = 'resident-1';
-const FAKE_USER_NAME = 'You';
+import { useAuth } from '../../../hooks/useAuth';
 
 export const Conversation: React.FC = () => {
   const { providerId = '' } = useParams();
-  return <ConversationSession key={providerId} providerId={providerId} />;
+  const { user } = useAuth();
+
+  if (!user) {
+    return (
+      <Navigate
+        to="/login"
+        replace
+        state={{ from: `/conversation/${providerId}` }}
+      />
+    );
+  }
+
+  return (
+    <ConversationSession
+      key={`${providerId}-${user.id}`}
+      providerId={providerId}
+      userId={user.id}
+      userName={user.fullName}
+    />
+  );
 };
 
-function ConversationSession({ providerId }: { providerId: string }) {
+function ConversationSession({
+  providerId,
+  userId,
+  userName,
+}: {
+  providerId: string;
+  userId: string;
+  userName: string;
+}) {
   const navigate = useNavigate();
   const providerName =
     providers.find((provider) => provider.id === providerId)?.name ??
     'Service provider';
-  const roomId = `resident-1__${providerId}`;
+  const roomId = `${userId}__${providerId}`;
   const [messages, setMessages] = useState<Message[]>(() => [
     {
       id: 'm1',
@@ -30,8 +55,8 @@ function ConversationSession({ providerId }: { providerId: string }) {
     {
       id: 'm2',
       roomId,
-      senderId: FAKE_USER_ID,
-      senderName: FAKE_USER_NAME,
+      senderId: userId,
+      senderName: userName,
       content: 'I would like to ask about your services.',
       createdAt: new Date(Date.now() - 45000).toISOString(),
     },
@@ -49,8 +74,8 @@ function ConversationSession({ providerId }: { providerId: string }) {
     const newMsg: Message = {
       id: `local-${Date.now()}`,
       roomId,
-      senderId: FAKE_USER_ID,
-      senderName: FAKE_USER_NAME,
+      senderId: userId,
+      senderName: userName,
       content: text,
       createdAt: new Date().toISOString(),
     };
@@ -72,7 +97,7 @@ function ConversationSession({ providerId }: { providerId: string }) {
   return (
     <ChatWindow
       myRole="resident"
-      myId={FAKE_USER_ID}
+      myId={userId}
       otherPartyId={providerId}
       otherPartyName={providerName}
       messages={messages}

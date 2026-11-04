@@ -1,4 +1,4 @@
-import { useCallback, useState } from "react";
+import { useCallback, useSyncExternalStore } from "react";
 import type { User } from "../types";
 
 interface AuthState {
@@ -8,39 +8,52 @@ interface AuthState {
   setUser: (user: User) => void;
 }
 
-/**
- * Temporary bridge while the real auth flow is wired up.
- 
- */
-export function useAuth(): AuthState {
-  const [user, setUserState] = useState<User | null>(() => {
-    try {
-      const raw = localStorage.getItem("user");
-      if (raw) {
-        return JSON.parse(raw) as User;
-      }
+function readStoredUser(): User | null {
+  try {
+    const raw = localStorage.getItem("user");
+    if (!raw) return null;
 
-      const dev: User = {
-        id: "dev-resident-1",
-        fullName: " Resident",
-        email: "Whitedaniel@gmail.com",
-        role: "resident",
-      };
-      localStorage.setItem("user", JSON.stringify(dev));
-      return dev;
-    } catch {
+    const savedUser = JSON.parse(raw) as User;
+    if (savedUser.id === "dev-resident-1") {
+      localStorage.removeItem("user");
       return null;
     }
-  });
+
+    return savedUser;
+  } catch {
+    return null;
+  }
+}
+
+let currentUser = readStoredUser();
+const subscribers = new Set<() => void>();
+
+function subscribe(callback: () => void) {
+  subscribers.add(callback);
+  return () => subscribers.delete(callback);
+}
+
+function getSnapshot() {
+  return currentUser;
+}
+
+function notifySubscribers() {
+  subscribers.forEach((callback) => callback());
+}
+
+export function useAuth(): AuthState {
+  const user = useSyncExternalStore(subscribe, getSnapshot, getSnapshot);
 
   const setUser = useCallback((next: User) => {
-    setUserState(next);
     localStorage.setItem("user", JSON.stringify(next));
+    currentUser = next;
+    notifySubscribers();
   }, []);
 
   const logout = useCallback(() => {
-    setUserState(null);
     localStorage.removeItem("user");
+    currentUser = null;
+    notifySubscribers();
   }, []);
 
   return { user, loading: false, logout, setUser };
