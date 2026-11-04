@@ -77,7 +77,7 @@ function ConversationSession({ providerId }: { providerId: string }) {
       otherPartyName={providerName}
       messages={messages}
       onSend={handleSend}
-      onBack={() => navigate('/services')}
+      onBack={() => navigate('/')}
     />
   );
 }
