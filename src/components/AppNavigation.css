@@ -82,8 +82,7 @@
   gap: clamp(16px, 2.5vw, 32px);
 }
 
-.app-navigation__link,
-.app-navigation__sign-in {
+.app-navigation__link {
   color: #263746;
   font-size: 13px;
   font-weight: 600;
@@ -92,8 +91,7 @@
 }
 
 .app-navigation__link:hover,
-.app-navigation__link.is-active,
-.app-navigation__sign-in:hover {
+.app-navigation__link.is-active {
   color: #e84900;
 }
 
@@ -107,21 +105,41 @@
   gap: 16px;
 }
 
+.app-navigation__sign-in,
 .app-navigation__register {
   display: inline-flex;
   min-height: 42px;
   align-items: center;
   justify-content: center;
   padding: 0 18px;
-  background: #e84900;
-  color: #fff;
+  border: 1px solid #e84900;
+  border-radius: 8px;
   font-size: 13px;
   font-weight: 700;
   text-decoration: none;
-  transition: background 160ms ease;
+  transition:
+    background 160ms ease,
+    color 160ms ease;
+}
+
+.app-navigation__sign-in {
+  background: #e84900;
+  color: #fff;
+}
+
+.app-navigation__sign-in:hover {
+  border-color: #c83f00;
+  background: #c83f00;
+  color: #fff;
+}
+
+.app-navigation__register {
+  background: #e84900;
+  color: #fff;
 }
 
 .app-navigation__register:hover {
+  border-color: #c83f00;
   background: #c83f00;
   color: #fff;
 }

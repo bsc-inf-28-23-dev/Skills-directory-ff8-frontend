@@ -1,8 +1,9 @@
 
 import { useState, type FormEvent } from 'react';
-import { Link, useNavigate } from 'react-router-dom';
+import { Link, useLocation, useNavigate } from 'react-router-dom';
 import './AuthForm.css';
 import { mockUsers } from '../../data/mockUsers';
+import { useAuth } from '../../hooks/useAuth';
 
 type AuthFormProps = {
   role: 'resident' | 'provider';
@@ -13,6 +14,8 @@ export default function AuthForm({ role, mode }: AuthFormProps) {
   const isRegister = mode === 'register';
   const roleName = role === 'resident' ? 'Resident' : 'Service Provider';
   const navigate = useNavigate();
+  const location = useLocation();
+  const { setUser } = useAuth();
 
   const [showPassword, setShowPassword] = useState(false);
   const [error, setError] = useState('');
@@ -61,9 +64,23 @@ export default function AuthForm({ role, mode }: AuthFormProps) {
       return;
     }
 
-    // Navigate to the dashboard for the user's role
+    setUser({
+      id: `${matchedUser.role}-${matchedUser.email.toLowerCase()}`,
+      fullName: matchedUser.name,
+      email: matchedUser.email,
+      phone: matchedUser.phone,
+      role: matchedUser.role,
+    });
+
+    const returnTo = (location.state as { from?: unknown } | null)?.from;
+    if (typeof returnTo === 'string' && returnTo.startsWith('/')) {
+      navigate(returnTo, { replace: true });
+      return;
+    }
+
+    // Residents return to the home page after signing in.
     if (matchedUser.role === 'resident') {
-      navigate('/resident/dashboard');
+      navigate('/', { replace: true });
     } else {
       navigate('/services/providers/rapid-flow');
     }
