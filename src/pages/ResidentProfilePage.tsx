@@ -1,5 +1,5 @@
 import { useState, type ReactNode } from "react";
-import { Link, useNavigate } from "react-router-dom";
+import { useNavigate } from "react-router-dom";
 import {
   ArrowUpRight,
   Briefcase,
@@ -50,12 +50,8 @@ export default function ResidentProfilePage() {
 
   return (
     <div className="page-container py-5" style={{ maxWidth: 1000 }}>
-      <nav className="mb-4">
-        <Link to="/resident/dashboard" className="text-uppercase small fw-semibold">
-          ← Back to dashboard
-        </Link>
-      </nav>
-
+      
+      {/* Header */}
       <header className="mb-4 d-flex justify-content-between align-items-start flex-wrap gap-3">
         <div>
           <Eyebrow>{hasProfile ? "Account" : "Welcome"}</Eyebrow>
@@ -63,16 +59,18 @@ export default function ResidentProfilePage() {
             {hasProfile ? "My profile" : "Create your profile"}
           </h1>
         </div>
-        {!editing && tab === "profile" && (
+        
+        {/* Only show the Edit button if they ALREADY have a profile */}
+        {!editing && tab === "profile" && hasProfile && (
           <button
             type="button"
-            className={hasProfile ? "btn btn-trade" : "btn btn-athletic"}
+            className="btn btn-trade"
             onClick={() => {
               setSaved(false);
               setEditing(true);
             }}
           >
-            {hasProfile ? "Edit profile" : "Create profile"} <ArrowUpRight />
+            Edit profile <ArrowUpRight />
           </button>
         )}
       </header>
@@ -104,7 +102,7 @@ export default function ResidentProfilePage() {
           aria-selected={tab === "profile"}
           onClick={() => setTab("profile")}
         >
-          Profile
+          Profile Details
         </button>
         <button
           type="button"

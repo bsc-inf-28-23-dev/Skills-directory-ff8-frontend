@@ -15,11 +15,7 @@ export default function ProviderReviewsPage() {
 
   return (
     <div className="page-container py-5" style={{ maxWidth: 960 }}>
-      <nav className="mb-4">
-        <Link to="/resident/dashboard" className="text-uppercase small fw-semibold">
-          ← Back to dashboard
-        </Link>
-      </nav>
+      
 
       <header className="mb-5">
         <Eyebrow>Reviews</Eyebrow>

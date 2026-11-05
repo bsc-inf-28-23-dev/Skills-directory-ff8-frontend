@@ -116,8 +116,9 @@ export default function ProfileForm({ user, onSaved, onCancel }: Props) {
 
   const busy = saving || uploadingAvatar;
 
+  // Added style={{ textAlign: "left" }} to fix the centering issue
   return (
-    <form onSubmit={onSubmit} noValidate aria-label="Edit profile" className="row g-4">
+    <form onSubmit={onSubmit} noValidate aria-label="Edit profile" className="row g-4" style={{ textAlign: "left" }}>
       {serverError && (
         <div className="col-12">
           <div className="alert-error" role="alert">{serverError}</div>
@@ -130,7 +131,7 @@ export default function ProfileForm({ user, onSaved, onCancel }: Props) {
           <Avatar name={values.fullName || user.fullName} imageUrl={avatarPreview} size={88} />
           <div>
             <label htmlFor="profile-avatar" className="btn btn-trade btn-sm mb-0">
-              <Camera /> {avatarPreview ? "Change photo" : "Add photo"}
+              <Camera size={16} className="me-1" /> {avatarPreview ? "Change photo" : "Add photo"}
             </label>
             <input
               id="profile-avatar"
@@ -278,9 +279,9 @@ export default function ProfileForm({ user, onSaved, onCancel }: Props) {
         </div>
       </div>
 
-      <div className="col-12 d-flex gap-2 pt-2">
+      <div className="col-12 d-flex gap-2 pt-3 border-top">
         <button type="submit" className="btn btn-athletic" disabled={busy}>
-          {saving && <span className="spinner-border spinner-border-sm" aria-hidden="true" />}
+          {saving && <span className="spinner-border spinner-border-sm me-2" aria-hidden="true" />}
           Save changes
         </button>
         <button type="button" className="btn btn-trade" onClick={onCancel} disabled={busy}>
