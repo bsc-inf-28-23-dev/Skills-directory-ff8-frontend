@@ -1,8 +1,7 @@
-import { useState, type FormEvent } from 'react'
-import './Home.css'
 
-// IMPORTANT: Change this if your teammate uses a different route.
-const SERVICES_PAGE = '/services'
+import { useEffect, useState } from 'react'
+import { useLocation } from 'react-router-dom'
+import './Home.css'
 
 type FeatureIconName = 'location' | 'shield' | 'star' | 'leaf'
 
@@ -44,20 +43,15 @@ function FeatureIcon({ name }: { name: FeatureIconName }) {
 }
 
 function Home() {
-  const [location, setLocation] = useState('')
+  const { hash } = useLocation()
   const [showMoreAbout, setShowMoreAbout] = useState(false)
 
-  function handleLocationSearch(event: FormEvent<HTMLFormElement>) {
-    event.preventDefault()
+  useEffect(() => {
+    if (!hash) return
 
-    const query = location.trim()
-
-    if (!query) return
-
-    const params = new URLSearchParams({ location: query })
-
-    window.location.href = `${SERVICES_PAGE}?${params.toString()}`
-  }
+    const target = document.getElementById(hash.slice(1))
+    target?.scrollIntoView({ behavior: 'smooth', block: 'start' })
+  }, [hash])
 
   return (
     <main className="home-page">
@@ -79,7 +73,7 @@ function Home() {
             Home
           </a>
 
-          <a href={SERVICES_PAGE}>
+          <a href="/services">
             Categories
           </a>
 
@@ -93,7 +87,7 @@ function Home() {
         </nav>
       </header>
 
-      {/* Hero and location search */}
+      {/* Hero section */}
       <section className="home-hero">
         <div className="hero-content">
           <p className="hero-label">
@@ -112,51 +106,6 @@ function Home() {
             Skillz Directory connects you with service providers in
             your area, quickly and easily.
           </p>
-
-          <form
-            className="location-search"
-            onSubmit={handleLocationSearch}
-          >
-            <label
-              className="visually-hidden"
-              htmlFor="location-search"
-            >
-              Enter your location
-            </label>
-
-            <span className="location-search-icon" aria-hidden="true">
-              <FeatureIcon name="location" />
-            </span>
-
-            <input
-              id="location-search"
-              type="text"
-              placeholder="Enter your location (e.g. Zomba, Blantyre, Lilongwe)"
-              value={location}
-              onChange={(event) => setLocation(event.target.value)}
-              autoComplete="address-level2"
-              required
-            />
-
-            <button type="submit">
-              <svg
-                viewBox="0 0 24 24"
-                width="19"
-                height="19"
-                fill="none"
-                stroke="currentColor"
-                strokeWidth="2"
-                strokeLinecap="round"
-                aria-hidden="true"
-              >
-                <circle cx="11" cy="11" r="7" />
-                <path d="m16 16 4 4" />
-              </svg>
-
-              <span>Explore Services</span>
-              <span aria-hidden="true">→</span>
-            </button>
-          </form>
         </div>
 
         <div className="hero-image">
@@ -169,7 +118,10 @@ function Home() {
       </section>
 
       {/* Benefits */}
-      <section className="home-benefits" aria-label="Benefits of Skillz Directory">
+      <section
+        className="home-benefits"
+        aria-label="Benefits of Skillz Directory"
+      >
         <article className="benefit-item">
           <div className="benefit-icon">
             <FeatureIcon name="location" />
@@ -264,9 +216,6 @@ function Home() {
             aria-expanded={showMoreAbout}
           >
             {showMoreAbout ? 'Show Less' : 'Learn More'}
-            <span aria-hidden="true">
-              {showMoreAbout ? ' ↑' : ' →'}
-            </span>
           </button>
         </div>
       </section>
@@ -300,11 +249,11 @@ function Home() {
         </div>
 
         <a className="callout-button" href="/register">
-          Get Started <span aria-hidden="true">→</span>
+          Get Started
         </a>
       </section>
 
-      {/* Simple footer */}
+      {/* Footer */}
       <footer className="home-footer">
         <a className="brand footer-brand" href="/">
           <span className="brand-mark">SD</span>
