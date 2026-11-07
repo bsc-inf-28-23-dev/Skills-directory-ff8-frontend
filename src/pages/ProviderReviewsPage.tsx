@@ -1,4 +1,4 @@
-import { Link, useParams } from "react-router-dom";
+import { useParams } from "react-router-dom";
 import Eyebrow from "../components/Eyebrow";
 import ReviewsSection from "../features/reviews/ReviewsSection";
 
@@ -15,8 +15,6 @@ export default function ProviderReviewsPage() {
 
   return (
     <div className="page-container py-5" style={{ maxWidth: 960 }}>
-      
-
       <header className="mb-5">
         <Eyebrow>Reviews</Eyebrow>
         <h1 className="display-heading display-heading-lg">
