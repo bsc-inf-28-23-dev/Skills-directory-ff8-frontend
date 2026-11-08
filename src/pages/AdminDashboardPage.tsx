@@ -1,7 +1,7 @@
 import { useState } from "react";
 import { useNavigate } from "react-router-dom";
 import {
-  ShieldAlert, Users, Store, Flag, CheckCircle, XCircle, LogOut, UserCog, Trash2, Plus
+  ShieldAlert, Users, Store, Flag, LogOut, Plus
 } from "lucide-react";
 import Eyebrow from "../components/Eyebrow";
 import Modal from "../components/Modal";
@@ -45,11 +45,11 @@ export default function AdminDashboardPage() {
   };
 
   // --- HANDLERS ---
-  const handleProviderAction = (id: string, action: string) => {
+  const handleProviderAction = (id: string) => {
     setProviders(prev => prev.filter(p => p.id !== id));
   };
 
-  const handleBanUser = (id: string) => {
+  const handleBanUser = () => {
     if (!window.confirm("Ban this user?")) return;
     alert("User banned.");
   };
@@ -84,15 +84,13 @@ export default function AdminDashboardPage() {
   return (
     <div className="container-fluid py-5 px-4 px-md-5" style={{ width: "100%", maxWidth: 1400, margin: 0, textAlign: "left" }}>
       
-      
-            <header className="mb-4">
+      <header className="mb-4">
         <Eyebrow>System Administration</Eyebrow>
         <h1 className="mb-0" style={{ lineHeight: 1 }}>
           <span className="display-heading" style={{ fontSize: "72px", color: "var(--ink)" }}>ADMIN</span>{" "}
           <span className="display-heading" style={{ fontSize: "48px", color: "var(--primary)" }}>DASHBOARD.</span>
         </h1>
       </header>
-      
 
       {/* TABS NAVIGATION */}
       <div className="tab-strip mb-4" role="tablist">
@@ -173,7 +171,7 @@ export default function AdminDashboardPage() {
                     Change Role
                   </button>
                   {u.role !== "admin" && (
-                    <button onClick={() => handleBanUser(u.id)} className="btn btn-sm btn-outline-danger">
+                    <button onClick={handleBanUser} className="btn btn-sm btn-outline-danger">
                       Ban
                     </button>
                   )}
@@ -209,8 +207,8 @@ export default function AdminDashboardPage() {
                     <td>{prov.serviceArea}</td>
                     <td className="text-end">
                       <div className="d-flex justify-content-end gap-2">
-                        <button onClick={() => handleProviderAction(prov.id, "approve")} className="btn btn-sm btn-outline-success">Approve</button>
-                        <button onClick={() => handleProviderAction(prov.id, "reject")} className="btn btn-sm btn-outline-danger">Reject</button>
+                        <button onClick={() => handleProviderAction(prov.id)} className="btn btn-sm btn-outline-success">Approve</button>
+                        <button onClick={() => handleProviderAction(prov.id)} className="btn btn-sm btn-outline-danger">Reject</button>
                       </div>
                     </td>
                   </tr>
