@@ -49,7 +49,7 @@ export default function ResidentProfilePage() {
   };
 
   return (
-    <div className="page-container py-5" style={{ maxWidth: 1000 }}>
+    <div className="container-fluid py-5 px-4 px-md-5" style={{ maxWidth: 1200, margin: 0, textAlign: "left" }}>
       
       {/* Header */}
       <header className="mb-4 d-flex justify-content-between align-items-start flex-wrap gap-3">
@@ -145,9 +145,9 @@ export default function ResidentProfilePage() {
               </dl>
             </>
           ) : (
-            <div className="text-center py-4">
+            <div className="py-4">
               <span
-                className="d-inline-flex align-items-center justify-content-center"
+                className="d-inline-flex align-items-center justify-content-center mb-3"
                 style={{
                   width: 64,
                   height: 64,
@@ -158,10 +158,10 @@ export default function ResidentProfilePage() {
               >
                 <UserPlus size={28} />
               </span>
-              <h2 id="about-heading" className="display-heading display-heading-md mt-3 mb-2" style={{ fontSize: 24 }}>
+              <h2 id="about-heading" className="display-heading display-heading-md mb-2" style={{ fontSize: 24 }}>
                 You haven't created a profile yet
               </h2>
-              <p className="text-muted-ink mb-4" style={{ maxWidth: 480, margin: "0 auto" }}>
+              <p className="text-muted-ink mb-4">
                 Add a photo, a short bio, your location and a few details so the community knows who you are.
               </p>
               <button
