@@ -1,5 +1,6 @@
 import { useEffect, useState } from "react";
-import { Link, NavLink, useLocation } from "react-router-dom";
+import { LogOut } from "lucide-react";
+import { Link, NavLink, useLocation, useNavigate } from "react-router-dom";
 import { useAuth } from "../hooks/useAuth";
 import "./AppNavigation.css";
 
@@ -11,7 +12,8 @@ interface NavigationLink {
 
 export default function AppNavigation() {
   const { pathname } = useLocation();
-  const { user } = useAuth();
+  const navigate = useNavigate();
+  const { user, logout } = useAuth();
   const [menuOpen, setMenuOpen] = useState(false);
   const [aboutActive, setAboutActive] = useState(false);
 
@@ -34,6 +36,12 @@ export default function AppNavigation() {
     setMenuOpen(false);
     window.scrollTo({ top: 0, behavior: "smooth" });
   };
+  const handleLogout = () => {
+    setMenuOpen(false);
+    logout();
+    navigate("/provider/login", { replace: true });
+  };
+
   const isAuthPage = /\/(login|register|forgot-password)$/.test(pathname);
   const isCompactPage =
     isAuthPage ||
@@ -148,13 +156,27 @@ export default function AppNavigation() {
 
         <div className="app-navigation__actions">
           {user ? (
-            <Link
-              className="app-navigation__register"
-              to={accountProfilePath}
-              onClick={() => setMenuOpen(false)}
-            >
-              Profile
-            </Link>
+            <>
+              {!(user.role === "provider" && isProviderArea) && (
+                <Link
+                  className="app-navigation__register"
+                  to={accountProfilePath}
+                  onClick={() => setMenuOpen(false)}
+                >
+                  Profile
+                </Link>
+              )}
+              {user.role === "provider" && (
+                <button
+                  type="button"
+                  className="app-navigation__logout"
+                  onClick={handleLogout}
+                >
+                  <LogOut size={16} aria-hidden="true" />
+                  Log out
+                </button>
+              )}
+            </>
           ) : (
             <>
               <Link

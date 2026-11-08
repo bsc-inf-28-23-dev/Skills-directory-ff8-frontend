@@ -144,6 +144,29 @@
   color: #fff;
 }
 
+.app-navigation__logout {
+  display: inline-flex;
+  min-height: 42px;
+  align-items: center;
+  justify-content: center;
+  gap: 8px;
+  padding: 0 16px;
+  border: 1px solid #e84900;
+  border-radius: 8px;
+  background: #fff;
+  color: #b63800;
+  font-family: inherit;
+  font-size: 13px;
+  font-weight: 700;
+  cursor: pointer;
+  transition: background 160ms ease, color 160ms ease;
+}
+
+.app-navigation__logout:hover {
+  background: #fff3ec;
+  color: #8f2d00;
+}
+
 .app-navigation__toggle {
   display: none;
   width: 42px;
