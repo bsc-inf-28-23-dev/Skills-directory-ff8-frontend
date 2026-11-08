@@ -1,5 +1,5 @@
-import { Link } from "react-router-dom";
-import { ArrowRight, ArrowUpRight } from "lucide-react";
+import { Link, useNavigate } from "react-router-dom";
+import { ArrowRight, ArrowUpRight, LogOut } from "lucide-react";
 import Eyebrow from "../components/Eyebrow";
 import StatCard from "../components/StatCard";
 import FeatureLink from "../components/FeatureLink";
@@ -9,68 +9,47 @@ import RecentConversations from "../features/resident/RecentConversations";
 import RecentProviders from "../features/resident/RecentProviders";
 
 export default function ResidentDashboardPage() {
-  const { user } = useAuth();
+  const { user, logout } = useAuth();
+  const navigate = useNavigate();
+
   if (!user) return null;
 
-  const firstName = user.fullName.trim().split(/\s+/)[0];
+  const firstName = "Resident"; // Forces correct spelling
 
- const hasProfile = Boolean(
-  user.bio ||
-    user.avatarUrl ||
-    user.location ||
-    user.occupation ||
-    (user.languages && user.languages.length > 0) 
-);
+  const onLogout = async () => {
+    await logout();
+    navigate("/login", { replace: true });
+  };
 
   return (
-    <div className="page-container py-5">
+    <div className="container-fluid py-5 px-4 px-md-5" style={{ width: "100%", maxWidth: 1200, marginLeft: 0, marginRight: "auto", textAlign: "left" }}>
+      
+      {/* Header with Two-Tone Color */}
       <header className="mb-5">
         <Eyebrow>Local skills. Real connections.</Eyebrow>
-        <h1 className="display-heading display-heading-lg mb-3">
+        <h1 className="display-heading display-heading-xl mb-3" style={{ lineHeight: 1.1 }}>
           Welcome back, <span className="text-primary">{firstName}.</span>
         </h1>
-        <p className="text-muted-ink" style={{ maxWidth: 512 }}>
+        <p className="text-muted-ink" style={{ maxWidth: 512, fontSize: 18 }}>
           Your community is right where you left it.
         </p>
       </header>
 
-      {!hasProfile && (
-        <section
-          className="surface-box p-4 p-md-5 mb-5 d-flex justify-content-between align-items-center flex-wrap gap-3"
-          aria-label="Complete your profile"
-        >
-          <div>
-            <div className="eyebrow mb-2">Get started</div>
-            <h2
-              className="display-heading display-heading-md mb-2"
-              style={{ fontSize: 22 }}
-            >
-              Create your profile.
-            </h2>
-            <p className="text-muted-ink mb-0" style={{ maxWidth: 480 }}>
-              Add a photo, a short bio, and a few details so the community knows
-              who you are.
-            </p>
-          </div>
-          <Link to="/resident/profile" className="btn btn-athletic">
-            Create profile <ArrowUpRight />
-          </Link>
-        </section>
-      )}
-
+      {/* Stat Cards */}
       <div className="row g-3 mb-5">
         <div className="col-12 col-md-4">
-          <StatCard value="-" label="Providers viewed" />
+          <StatCard value="—" label="Providers viewed" />
         </div>
         <div className="col-12 col-md-4">
-          <StatCard value="-" label="Reviews written" />
+          <StatCard value="—" label="Reviews written" />
         </div>
         <div className="col-12 col-md-4">
-          <StatCard value="-!" label="Conversations" />
+          <StatCard value="—" label="Conversations" />
         </div>
       </div>
 
-      <div className="row g-4 g-lg-5">
+      {/* Main Content */}
+      <div className="row g-4 g-lg-5 mb-5">
         <div className="col-12 col-lg-7">
           <section aria-labelledby="recent-providers-heading">
             <h2 id="recent-providers-heading" className="section-label">
@@ -102,6 +81,22 @@ export default function ResidentDashboardPage() {
           </div>
         </div>
       </div>
+
+      {/* Account / Logout Section at the bottom left */}
+      <section className="surface-box p-4 mt-5 mb-4" style={{ maxWidth: 500 }}>
+        <h3 className="section-label">Account</h3>
+        <p className="text-muted-ink small mb-3">
+          Signed in as <strong>{user.email}</strong>.
+        </p>
+        <button
+          type="button"
+          className="btn btn-danger-outline d-flex align-items-center gap-2"
+          onClick={onLogout}
+        >
+          <LogOut size={16} /> Log out
+        </button>
+      </section>
+      
     </div>
   );
 }

@@ -1,5 +1,5 @@
 import { useState, type ReactNode } from "react";
-import { Link, useNavigate } from "react-router-dom";
+import { useNavigate } from "react-router-dom";
 import {
   ArrowUpRight,
   Briefcase,
@@ -49,32 +49,31 @@ export default function ResidentProfilePage() {
   };
 
   return (
-    <div className="page-container py-5" style={{ maxWidth: 1000 }}>
-      <nav className="mb-4">
-        <Link to="/resident/dashboard" className="text-uppercase small fw-semibold">
-          ← Back to dashboard
-        </Link>
-      </nav>
+    <div className="container-fluid py-5 px-4 px-md-5" style={{ maxWidth: 1000, margin: 0, textAlign: "left" }}>
+      
+      {/* Header with Two-Tone Color and Different Sizes */}
+      <header className="mb-5">
+        <Eyebrow>{hasProfile ? "Account" : "Welcome"}</Eyebrow>
+        
 
-      <header className="mb-4 d-flex justify-content-between align-items-start flex-wrap gap-3">
-        <div>
-          <Eyebrow>{hasProfile ? "Account" : "Welcome"}</Eyebrow>
-          <h1 className="display-heading display-heading-lg">
-            {hasProfile ? "My profile" : "Create your profile"}
-          </h1>
-        </div>
-        {!editing && tab === "profile" && (
-          <button
-            type="button"
-            className={hasProfile ? "btn btn-trade" : "btn btn-athletic"}
-            onClick={() => {
-              setSaved(false);
-              setEditing(true);
-            }}
-          >
-            {hasProfile ? "Edit profile" : "Create profile"} <ArrowUpRight />
-          </button>
-        )}
+      <h1 className="mb-3" style={{ lineHeight: 1 }}>
+  {hasProfile ? (
+    <>
+      <span className="display-heading" style={{ fontSize: "88px", color: "var(--ink)" }}>MY</span>{" "}
+      <span className="display-heading" style={{ fontSize: "56px", color: "var(--primary)" }}>PROFILE.</span>
+    </>
+  ) : (
+    <>
+      <span className="display-heading" style={{ fontSize: "88px", color: "var(--ink)" }}>CREATE</span>{" "}
+      <span className="display-heading" style={{ fontSize: "56px", color: "var(--primary)" }}>YOUR PROFILE.</span>
+    </>
+  )}
+</h1>   
+        <p className="text-muted-ink mb-4" style={{ maxWidth: 600, fontSize: 18 }}>
+          {hasProfile 
+            ? "Manage your personal information and see the reviews you have written."
+            : "Add a photo, a short bio, your location and a few details so the community knows who you are."}
+        </p>
       </header>
 
       {saved && !editing && (
@@ -83,126 +82,128 @@ export default function ResidentProfilePage() {
         </p>
       )}
 
-      <section className="surface-box p-4 p-md-5 mb-4">
-        <div className="d-flex align-items-center gap-4 flex-wrap">
-          <Avatar name={user.fullName} imageUrl={user.avatarUrl} size={96} />
-          <div>
-            <h2 className="display-heading display-heading-md mb-1" style={{ fontSize: 28 }}>
-              {displayName}
-            </h2>
-            <div className="small text-muted-ink text-uppercase" style={{ letterSpacing: "0.08em" }}>
-              Resident{memberSince ? ` · Member since ${memberSince}` : ""}
+      <div className="row">
+        <div className="col-12">
+          
+          {/* Profile Card */}
+          <section className="surface-box p-4 p-md-5 mb-4">
+            <div className="d-flex align-items-center gap-4 flex-wrap mb-4 pb-4 border-bottom">
+              <Avatar name={user.fullName} imageUrl={user.avatarUrl} size={96} />
+              <div>
+                <h2 className="display-heading display-heading-md mb-1" style={{ fontSize: 32 }}>
+                  {displayName}
+                </h2>
+                <div className="small text-muted-ink text-uppercase fw-bold" style={{ letterSpacing: "0.08em" }}>
+                  Resident{memberSince ? ` · Member since ${memberSince}` : ""}
+                </div>
+              </div>
             </div>
-          </div>
-        </div>
-      </section>
 
-      <div className="tab-strip mb-4" role="tablist" aria-label="Profile sections">
-        <button
-          type="button"
-          role="tab"
-          aria-selected={tab === "profile"}
-          onClick={() => setTab("profile")}
-        >
-          Profile
-        </button>
-        <button
-          type="button"
-          role="tab"
-          aria-selected={tab === "reviews"}
-          onClick={() => setTab("reviews")}
-        >
-          My reviews
-        </button>
-      </div>
-
-      {tab === "profile" && (
-        <section className="surface-box p-4 p-md-5 mb-4" aria-labelledby="about-heading">
-          {editing ? (
-            <ProfileForm
-              user={user}
-              onCancel={() => setEditing(false)}
-              onSaved={(updated) => {
-                setUser(updated);
-                setEditing(false);
-                setSaved(true);
-              }}
-            />
-          ) : hasProfile ? (
-            <>
-              <h2 id="about-heading" className="section-label">About</h2>
-
-              {user.bio && <p className="review-text mb-4">{user.bio}</p>}
-
-              <dl className="row mb-0 g-3">
-                <InfoRow icon={<MapPin size={16} />} label="Location" value={user.location} />
-                <InfoRow icon={<Briefcase size={16} />} label="Occupation" value={user.occupation} />
-                <InfoRow
-                  icon={<Languages size={16} />}
-                  label="Languages"
-                  value={user.languages && user.languages.length ? user.languages.join(", ") : null}
-                />
-                <InfoRow icon={<Phone size={16} />} label="Phone" value={user.phone} />
-                <InfoRow label="Email" value={user.email} />
-              </dl>
-            </>
-          ) : (
-            <div className="text-center py-4">
-              <span
-                className="d-inline-flex align-items-center justify-content-center"
-                style={{
-                  width: 64,
-                  height: 64,
-                  background: "var(--primary)",
-                  color: "var(--primary-fg)",
-                }}
-                aria-hidden="true"
-              >
-                <UserPlus size={28} />
-              </span>
-              <h2 id="about-heading" className="display-heading display-heading-md mt-3 mb-2" style={{ fontSize: 24 }}>
-                You haven't created a profile yet
-              </h2>
-              <p className="text-muted-ink mb-4" style={{ maxWidth: 480, margin: "0 auto" }}>
-                Add a photo, a short bio, your location and a few details so the community knows who you are.
-              </p>
+            <div className="tab-strip mb-4" role="tablist" aria-label="Profile sections">
               <button
                 type="button"
-                className="btn btn-athletic"
-                onClick={() => {
-                  setSaved(false);
-                  setEditing(true);
-                }}
+                role="tab"
+                aria-selected={tab === "profile"}
+                onClick={() => setTab("profile")}
               >
-                Create profile <ArrowUpRight />
+                Profile Details
+              </button>
+              <button
+                type="button"
+                role="tab"
+                aria-selected={tab === "reviews"}
+                onClick={() => setTab("reviews")}
+              >
+                My reviews
               </button>
             </div>
-          )}
-        </section>
-      )}
 
-      {tab === "reviews" && (
-        <section className="surface-box p-4 p-md-5 mb-4" aria-labelledby="my-reviews-heading">
-          <h2 id="my-reviews-heading" className="section-label">My reviews</h2>
-          <MyReviews />
-        </section>
-      )}
+            {tab === "profile" && (
+              <div>
+                {editing ? (
+                  <ProfileForm
+                    user={user}
+                    onCancel={() => setEditing(false)}
+                    onSaved={(updated) => {
+                      setUser(updated);
+                      setEditing(false);
+                      setSaved(true);
+                    }}
+                  />
+                ) : hasProfile ? (
+                  <>
+                    <h3 className="section-label">About</h3>
+                    {user.bio && <p className="review-text mb-4">{user.bio}</p>}
 
-      <section className="surface-box p-4 mb-4">
-        <h2 className="section-label">Account</h2>
-        <p className="text-muted-ink small mb-3">
-          Signed in as <strong>{user.email}</strong>. Logging out will end this session on this device.
-        </p>
-        <button
-          type="button"
-          className="btn btn-danger-outline"
-          onClick={onLogout}
-          disabled={loggingOut}
-        >
-          {loggingOut && <span className="spinner-border spinner-border-sm" aria-hidden="true" />}
-          <LogOut /> Log out
-        </button>
-      </section>
+                    <dl className="row mb-0 g-3">
+                      <InfoRow icon={<MapPin size={16} />} label="Location" value={user.location} />
+                      <InfoRow icon={<Briefcase size={16} />} label="Occupation" value={user.occupation} />
+                      <InfoRow
+                        icon={<Languages size={16} />}
+                        label="Languages"
+                        value={user.languages && user.languages.length ? user.languages.join(", ") : null}
+                      />
+                      <InfoRow icon={<Phone size={16} />} label="Phone" value={user.phone} />
+                      <InfoRow label="Email" value={user.email} />
+                    </dl>
+                  </>
+                ) : (
+                  <div className="py-4">
+                    <span
+                      className="d-inline-flex align-items-center justify-content-center mb-3"
+                      style={{ width: 64, height: 64, background: "var(--primary)", color: "var(--primary-fg)" }}
+                      aria-hidden="true"
+                    >
+                      <UserPlus size={28} />
+                    </span>
+                    <h3 className="display-heading display-heading-md mb-2" style={{ fontSize: 28 }}>
+                      You haven't created a profile yet
+                    </h3>
+                    <p className="text-muted-ink mb-4" style={{ fontSize: 16 }}>
+                      Add a photo, a short bio, your location and a few details so the community knows who you are.
+                    </p>
+                    <button
+                      type="button"
+                      className="btn btn-athletic"
+                      onClick={() => {
+                        setSaved(false);
+                        setEditing(true);
+                      }}
+                    >
+                      Create profile <ArrowUpRight />
+                    </button>
+                  </div>
+                )}
+              </div>
+            )}
+
+            {tab === "reviews" && (
+              <div>
+                <h3 className="section-label">My reviews</h3>
+                <MyReviews />
+              </div>
+            )}
+          </section>
+
+          {/* Account / Logout Box */}
+          <section className="surface-box p-4 mb-4" style={{ maxWidth: 500 }}>
+            <h3 className="section-label">Account</h3>
+            <p className="text-muted-ink small mb-4">
+              Signed in as <strong>{user.email}</strong>.
+            </p>
+            <button
+              type="button"
+              className="btn btn-danger-outline d-flex align-items-center gap-2"
+              onClick={onLogout}
+              disabled={loggingOut}
+            >
+              {loggingOut && <span className="spinner-border spinner-border-sm me-2" aria-hidden="true" />}
+              <LogOut size={16} /> Log out
+            </button>
+          </section>
+          
+        </div>
+      </div>
     </div>
   );
 }
@@ -219,13 +220,13 @@ function InfoRow({
   return (
     <>
       <dt
-        className="col-sm-4 text-uppercase small text-muted-ink d-flex align-items-center gap-2"
+        className="col-sm-4 text-uppercase small text-muted-ink d-flex align-items-center gap-2 fw-bold"
         style={{ letterSpacing: "0.06em" }}
       >
         {icon}
         {label}
       </dt>
-      <dd className="col-sm-8 mb-0">
+      <dd className="col-sm-8 mb-0" style={{ fontSize: 15 }}>
         {value ? value : <span className="text-muted-ink">Not provided</span>}
       </dd>
     </>

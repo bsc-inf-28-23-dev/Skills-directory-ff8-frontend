@@ -62,6 +62,7 @@ export default function AppNavigation() {
   const profilePath = pathname.startsWith("/services/providers/")
     ? pathname
     : "/services/providers/rapid-flow";
+  
   const accountProfilePath =
     user?.role === "resident" ? "/resident/profile" : profilePath;
 
@@ -73,19 +74,17 @@ export default function AppNavigation() {
     : isProviderArea
     ? [
         { label: "Services", to: "/services" },
-        { label: "Messages", to: "/provider/messages" }, // Provider sees Inbox
-        { label: "Profile", to: profilePath },
+        { label: "Messages", to: "/provider/messages" },
+        // REMOVED "Profile" from text links
       ]
     : isResidentArea
       ? [
           { label: "Dashboard", to: "/resident/dashboard" },
           { label: "Services", to: "/services" },
-          // Resident goes straight to the chat with the demo provider
           { label: "Messages", to: "/conversation/prov-1" }, 
-          { label: "Profile", to: "/resident/profile" },
+          // REMOVED "Profile" from text links
         ]
       : [
-          // Public pages (Home) do NOT have a Messages link
           { label: "Home", to: "/", end: true },
           { label: "Services", to: "/services" },
           { label: "About", to: "/#about-section" },
