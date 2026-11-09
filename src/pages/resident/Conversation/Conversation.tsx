@@ -1,5 +1,5 @@
 import React, { useState } from 'react';
-import { Navigate, useParams, useNavigate } from 'react-router-dom';
+import { Navigate, useParams } from 'react-router-dom';
 import type { Message } from '../../../types/message';
 import { ChatWindow } from '../../../components/chat/ChatWindow';
 import { providers } from '../../../data/provider';
@@ -38,7 +38,6 @@ function ConversationSession({
   userId: string;
   userName: string;
 }) {
-  const navigate = useNavigate();
   const providerName =
     providers.find((provider) => provider.id === providerId)?.name ??
     'Service provider';
@@ -102,7 +101,6 @@ function ConversationSession({
       otherPartyName={providerName}
       messages={messages}
       onSend={handleSend}
-      onBack={() => navigate('/')}
     />
   );
 }

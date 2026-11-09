@@ -1,5 +1,5 @@
 import React, { useState } from 'react';
-import { useParams, useNavigate } from 'react-router-dom';
+import { useParams } from 'react-router-dom';
 import type { Message } from '../../../types/message';
 import { ChatWindow } from '../../../components/chat/ChatWindow';
 
@@ -28,7 +28,6 @@ const FAKE_HISTORY: Message[] = [
 
 export const ProviderConversation: React.FC = () => {
   const { residentId = '' } = useParams();
-  const navigate = useNavigate();
   const [messages, setMessages] = useState<Message[]>(FAKE_HISTORY);
 
   const handleSend = (text: string) => {
@@ -51,7 +50,6 @@ export const ProviderConversation: React.FC = () => {
       otherPartyName={RESIDENT_NAME}
       messages={messages}
       onSend={handleSend}
-      
     />
   );
 };
