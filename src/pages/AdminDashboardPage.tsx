@@ -7,7 +7,11 @@ import Eyebrow from "../components/Eyebrow";
 import Modal from "../components/Modal";
 import { useAuth } from "../hooks/useAuth";
 import { formatDate } from "../utils/format";
-import type { User, ProviderSummary } from "../types";
+import type { User, UserRole, ProviderSummary } from "../types";
+
+function isUserRole(role: string): role is UserRole {
+  return role === "resident" || role === "provider" || role === "admin";
+}
 
 // --- MOCK DATA ---
 const INITIAL_USERS: User[] = [
@@ -34,7 +38,7 @@ export default function AdminDashboardPage() {
   const [isRoleModalOpen, setIsRoleModalOpen] = useState(false);
   const [isAdminModalOpen, setIsAdminModalOpen] = useState(false);
   const [selectedUser, setSelectedUser] = useState<User | null>(null);
-  const [newRole, setNewRole] = useState<string>("");
+  const [newRole, setNewRole] = useState<UserRole>("resident");
   
   // Fake New Admin Form
   const [newAdminEmail, setNewAdminEmail] = useState("");
@@ -62,7 +66,7 @@ export default function AdminDashboardPage() {
 
   const submitRoleChange = () => {
     if (!selectedUser) return;
-    setUsers(prev => prev.map(u => u.id === selectedUser.id ? { ...u, role: newRole as any } : u));
+    setUsers(prev => prev.map(u => u.id === selectedUser.id ? { ...u, role: newRole } : u));
     setIsRoleModalOpen(false);
   };
 
@@ -240,7 +244,13 @@ export default function AdminDashboardPage() {
       {/* MODALS */}
       <Modal isOpen={isRoleModalOpen} onClose={() => setIsRoleModalOpen(false)} title="Change User Role">
         <p>Update the role for <strong>{selectedUser?.fullName}</strong></p>
-        <select className="form-select mb-4" value={newRole} onChange={(e) => setNewRole(e.target.value)}>
+        <select
+          className="form-select mb-4"
+          value={newRole}
+          onChange={(event) => {
+            if (isUserRole(event.target.value)) setNewRole(event.target.value);
+          }}
+        >
           <option value="resident">Resident</option>
           <option value="provider">Service Provider</option>
           <option value="admin">Administrator</option>

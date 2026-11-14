@@ -1,55 +1,60 @@
-import React, { useState } from 'react';
-import { useParams } from 'react-router-dom';
-import type { Message } from '../../../types/message';
+import React from 'react';
+import { Navigate, useLocation, useParams } from 'react-router-dom';
 import { ChatWindow } from '../../../components/chat/ChatWindow';
-
-const FAKE_PROVIDER_ID = 'prov-1';
-const FAKE_PROVIDER_NAME = 'Rapid Flow Plumbing';
-const RESIDENT_NAME = 'Resident A';
-
-const FAKE_HISTORY: Message[] = [
-  {
-    id: 'm1',
-    roomId: 'resident-1__prov-1',
-    senderId: 'prov-1',
-    senderName: FAKE_PROVIDER_NAME,
-    content: 'Hi! How can I help you today?',
-    createdAt: new Date(Date.now() - 60000).toISOString(),
-  },
-  {
-    id: 'm2',
-    roomId: 'resident-1__prov-1',
-    senderId: 'resident-1',
-    senderName: RESIDENT_NAME,
-    content: 'Hey, my kitchen sink is leaking badly.',
-    createdAt: new Date(Date.now() - 45000).toISOString(),
-  },
-];
+import { useAuth } from '../../../hooks/useAuth';
+import { useChatRoom } from '../../../hooks/useChatRoom';
 
 export const ProviderConversation: React.FC = () => {
   const { residentId = '' } = useParams();
-  const [messages, setMessages] = useState<Message[]>(FAKE_HISTORY);
+  const { user } = useAuth();
+  const location = useLocation();
 
-  const handleSend = (text: string) => {
-    const newMsg: Message = {
-      id: `local-${Date.now()}`,
-      roomId: `resident-1__prov-1`,
-      senderId: FAKE_PROVIDER_ID,
-      senderName: FAKE_PROVIDER_NAME,
-      content: text,
-      createdAt: new Date().toISOString(),
-    };
-    setMessages((prev) => [...prev, newMsg]);
-  };
+  if (!user || user.role !== 'provider') {
+    return (
+      <Navigate
+        to="/provider/login"
+        replace
+        state={{ from: location.pathname }}
+      />
+    );
+  }
+
+  return (
+    <ProviderConversationSession
+      key={`${residentId}-${user.id}`}
+      residentId={residentId}
+      userId={user.id}
+      userName={user.fullName}
+      residentName={
+        (location.state as { otherPartyName?: string } | null)?.otherPartyName ??
+        'Resident'
+      }
+    />
+  );
+};
+
+function ProviderConversationSession({
+  residentId,
+  userId,
+  userName,
+  residentName,
+}: {
+  residentId: string;
+  userId: string;
+  userName: string;
+  residentName: string;
+}) {
+  const roomId = `${residentId}__${userId}`;
+  const { messages, sendMessage } = useChatRoom(roomId, []);
 
   return (
     <ChatWindow
       myRole="provider"
-      myId={FAKE_PROVIDER_ID}
+      myId={userId}
       otherPartyId={residentId}
-      otherPartyName={RESIDENT_NAME}
+      otherPartyName={residentName}
       messages={messages}
-      onSend={handleSend}
+      onSend={(text) => sendMessage(text, userId, userName)}
     />
   );
-};
+}

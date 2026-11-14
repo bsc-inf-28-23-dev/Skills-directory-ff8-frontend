@@ -129,7 +129,7 @@ export default function DirectoryPage({
             <div className="services-heading-copy">
               <h2 className="services-heading mb-0">Services</h2>
               <p className="services-heading-note mb-0">
-                Sample listings and ratings
+                Browse services offered by local providers
               </p>
             </div>
             <span className="services-result-count">

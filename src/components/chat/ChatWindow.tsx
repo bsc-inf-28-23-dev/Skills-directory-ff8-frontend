@@ -1,5 +1,5 @@
 import React, { useEffect, useRef } from 'react';
-import { useNavigate, useLocation } from 'react-router-dom'; // Added
+import { useNavigate, useLocation } from 'react-router-dom';
 import type { Message } from '../../types/message';
 import type { Role } from '../../types/room';
 import { MessageBubble } from './MessageBubble';
@@ -24,14 +24,13 @@ export const ChatWindow: React.FC<Props> = ({
 }) => {
   const bottomRef = useRef<HTMLDivElement | null>(null);
   const navigate = useNavigate();
-  const { pathname } = useLocation(); // Tells us exactly where we are
+  const { pathname } = useLocation();
 
   useEffect(() => {
     bottomRef.current?.scrollIntoView({ behavior: 'smooth' });
   }, [messages]);
 
   const handleBack = () => {
-    // Smart Back Logic: If Provider, go to Inbox. If Resident, go to Home.
     if (pathname.startsWith('/provider')) {
       navigate('/provider/messages');
     } else {
@@ -48,9 +47,6 @@ export const ChatWindow: React.FC<Props> = ({
 
         <div className="chat-header-center">
           <div className="chat-provider-name">{otherPartyName}</div>
-          <small className="chat-status" style={{ color: '#6b6375' }}>
-            ○ Demo Mode
-          </small>
         </div>
 
         <div className="chat-header-spacer" />

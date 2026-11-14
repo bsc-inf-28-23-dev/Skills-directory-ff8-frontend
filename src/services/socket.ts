@@ -1,13 +1,15 @@
 import { io, Socket } from 'socket.io-client';
+import { API_BASE_URL } from '../config/env';
 
-const SOCKET_URL = 'http://localhost:3000'; 
+const SOCKET_URL =
+  import.meta.env.VITE_SOCKET_URL ??
+  new URL(API_BASE_URL, window.location.origin).origin;
 let socket: Socket | null = null;
 
 export function getSocket(): Socket {
   if (!socket) {
     socket = io(SOCKET_URL, {
       autoConnect: false,
-      auth: { token: 'fake-jwt' },
     });
   }
   return socket;

@@ -61,7 +61,7 @@ export default function AppNavigation() {
 
   const profilePath = pathname.startsWith("/services/providers/")
     ? pathname
-    : "/services/providers/rapid-flow";
+    : "/services";
   
   const accountProfilePath =
     user?.role === "resident" ? "/resident/profile" : profilePath;
@@ -81,7 +81,7 @@ export default function AppNavigation() {
       ? [
           { label: "Dashboard", to: "/resident/dashboard" },
           { label: "Services", to: "/services" },
-          { label: "Messages", to: "/conversation/prov-1" }, 
+          { label: "Messages", to: "/resident/dashboard#recent-conversations-heading" },
           // REMOVED "Profile" from text links
         ]
       : [

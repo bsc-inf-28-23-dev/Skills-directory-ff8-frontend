@@ -7,16 +7,18 @@ export function useChatRoom(roomId: string, initialMessages: Message[]) {
 
   useEffect(() => {
     const socket = getSocket();
+    socket.auth = { token: localStorage.getItem('accessToken') };
     socket.connect();
     socket.emit('chat:join', { roomId });
-    
-    socket.on('message:new', (msg: Message) => {
+
+    const handleNewMessage = (msg: Message) => {
       setMessages((prev) => [...prev, msg]);
-    });
+    };
+    socket.on('message:new', handleNewMessage);
 
     return () => {
       socket.emit('chat:leave', { roomId });
-      socket.off('message:new');
+      socket.off('message:new', handleNewMessage);
       socket.disconnect();
     };
   }, [roomId]);

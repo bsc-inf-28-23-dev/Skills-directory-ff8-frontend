@@ -5,7 +5,7 @@ interface AuthState {
   user: User | null;
   loading: boolean;
   logout: () => void;
-  setUser: (user: User) => void;
+  setUser: (user: User, accessToken?: string) => void;
 }
 
 function readStoredUser(): User | null {
@@ -14,13 +14,21 @@ function readStoredUser(): User | null {
     if (!raw) return null;
 
     const savedUser = JSON.parse(raw) as User;
-    if (savedUser.id === "dev-resident-1") {
+    if (
+      savedUser.id.startsWith("dev-") ||
+      savedUser.email === "resident@test.com" ||
+      savedUser.email === "provider@test.com" ||
+      savedUser.email.endsWith("@example.invalid")
+    ) {
       localStorage.removeItem("user");
+      localStorage.removeItem("accessToken");
       return null;
     }
 
     return savedUser;
   } catch {
+    localStorage.removeItem("user");
+    localStorage.removeItem("accessToken");
     return null;
   }
 }
@@ -44,14 +52,20 @@ function notifySubscribers() {
 export function useAuth(): AuthState {
   const user = useSyncExternalStore(subscribe, getSnapshot, getSnapshot);
 
-  const setUser = useCallback((next: User) => {
+  const setUser = useCallback((next: User, accessToken?: string) => {
     localStorage.setItem("user", JSON.stringify(next));
+    if (accessToken) {
+      localStorage.setItem("accessToken", accessToken);
+    } else {
+      localStorage.removeItem("accessToken");
+    }
     currentUser = next;
     notifySubscribers();
   }, []);
 
   const logout = useCallback(() => {
     localStorage.removeItem("user");
+    localStorage.removeItem("accessToken");
     currentUser = null;
     notifySubscribers();
   }, []);

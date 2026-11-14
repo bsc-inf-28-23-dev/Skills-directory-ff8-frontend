@@ -435,7 +435,7 @@ export default function ProviderProfilePage({
             </div>
 
             <p className="profile-preview-note">
-              Ratings and reviews are sample data for this demo and cannot be
+              Ratings and reviews are provided by customers and cannot be
               edited here.
             </p>
           </aside>

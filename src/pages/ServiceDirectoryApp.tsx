@@ -1,18 +1,19 @@
-import { useEffect, useRef, useState } from "react";
+import { useEffect, useState } from "react";
 import "../service-directory.css";
-import { categories, providers } from "../data/provider";
-import { loadProviders, saveProviders } from "../data/providerStorage";
+import { categories } from "../data/provider";
 import { Navigate, useMatch, useNavigate } from "react-router-dom";
 import DirectoryPage from "./DirectoryPage";
 import ProviderProfilePage from "./ProviderProfilepage";
 import type { ServiceProvider } from "../types/serviceProvider";
+import { getProviders, updateProvider } from "../services/providerService";
+import ErrorAlert from "../components/ErrorAlert";
+import LoadingSpinner from "../components/LoadingSpinner";
 
 export default function ServiceDirectoryApp() {
-  const [providerData, setProviderData] = useState<ServiceProvider[]>(providers);
-  const [storageError, setStorageError] = useState("");
-  const providerDataRef = useRef(providerData);
-  const loadRequestRef = useRef<Promise<ServiceProvider[] | null> | null>(null);
-  const saveQueueRef = useRef<Promise<void>>(Promise.resolve());
+  const [providerData, setProviderData] = useState<ServiceProvider[]>([]);
+  const [loading, setLoading] = useState(true);
+  const [loadError, setLoadError] = useState("");
+  const [saveError, setSaveError] = useState("");
   const navigate = useNavigate();
   const profileMatch = useMatch("/services/providers/:providerId");
   const profileProvider = providerData.find(
@@ -22,23 +23,19 @@ export default function ServiceDirectoryApp() {
   useEffect(() => {
     let isCurrent = true;
 
-    const loadRequest = loadProviders();
-    loadRequestRef.current = loadRequest;
-
-    loadRequest
-      .then((storedProviders) => {
-        if (!isCurrent || !storedProviders) return;
-
-        providerDataRef.current = storedProviders;
-        setProviderData(storedProviders);
+    getProviders()
+      .then((providers) => {
+        if (isCurrent) setProviderData(providers);
       })
       .catch((error: unknown) => {
-        console.error("Could not load saved provider data.", error);
         if (isCurrent) {
-          setStorageError(
-            "Saved profile data could not be loaded. The sample profiles are shown instead.",
+          setLoadError(
+            error instanceof Error ? error.message : "Could not load providers.",
           );
         }
+      })
+      .finally(() => {
+        if (isCurrent) setLoading(false);
       });
 
     return () => {
@@ -47,33 +44,28 @@ export default function ServiceDirectoryApp() {
   }, []);
 
   async function saveProvider(updatedProvider: ServiceProvider): Promise<boolean> {
-    const saveRequest = saveQueueRef.current.then(async () => {
-      await loadRequestRef.current?.catch(() => null);
-
-      const updatedProviders = providerDataRef.current.map((provider) =>
-        provider.id === updatedProvider.id ? updatedProvider : provider,
-      );
-
-      await saveProviders(updatedProviders);
-      providerDataRef.current = updatedProviders;
-      setProviderData(updatedProviders);
-    });
-
-    saveQueueRef.current = saveRequest.catch(() => undefined);
-
     try {
-      await saveRequest;
-      setStorageError("");
+      const savedProvider = await updateProvider(updatedProvider.id, updatedProvider);
+      setProviderData((current) =>
+        current.map((provider) =>
+          provider.id === savedProvider.id ? savedProvider : provider,
+        ),
+      );
+      setSaveError("");
       return true;
     } catch (error) {
       console.error("Could not save provider data.", error);
-      setStorageError(
-        "Profile changes could not be saved in this browser. Please try again.",
+      setSaveError(
+        error instanceof Error
+          ? error.message
+          : "Could not save provider changes. Please try again.",
       );
       return false;
     }
   }
 
+  if (loading) return <LoadingSpinner label="Loading providers..." />;
+  if (loadError) return <ErrorAlert message={loadError} />;
   if (profileMatch && !profileProvider) {
     return <Navigate to="/services" replace />;
   }
@@ -81,9 +73,9 @@ export default function ServiceDirectoryApp() {
   return (
     <div id="service-directory">
       <div className="app-shell">
-        {storageError && (
-          <div className="alert alert-warning m-3" role="alert">
-            {storageError}
+        {saveError && (
+          <div className="m-3">
+            <ErrorAlert message={saveError} />
           </div>
         )}
         {profileProvider ? (

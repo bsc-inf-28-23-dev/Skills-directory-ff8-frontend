@@ -1,9 +1,10 @@
 
+import axios from 'axios';
 import { useState, type FormEvent } from 'react';
 import { Link, useLocation, useNavigate } from 'react-router-dom';
 import './AuthForm.css';
-import { mockUsers } from '../../data/mockUsers';
 import { useAuth } from '../../hooks/useAuth';
+import { loginUser, registerUser } from '../../services/authService';
 
 type AuthFormProps = {
   role: 'resident' | 'provider';
@@ -21,68 +22,63 @@ export default function AuthForm({ role, mode }: AuthFormProps) {
   const [error, setError] = useState('');
   const [message, setMessage] = useState('');
 
-  function handleSubmit(event: FormEvent<HTMLFormElement>) {
+  async function handleSubmit(event: FormEvent<HTMLFormElement>) {
     event.preventDefault();
     setError('');
     setMessage('');
 
     const formData = new FormData(event.currentTarget);
+    const fullName = String(formData.get('fullName') ?? '').trim();
+    const phone = String(formData.get('phone') ?? '').trim();
     const email = String(formData.get('email') ?? '').trim();
     const password = String(formData.get('password') ?? '');
     const confirmPassword = String(formData.get('confirmPassword') ?? '');
 
-    // Registration validation
-          if (isRegister) {
-        if (password !== confirmPassword) {
-          setError('Your passwords do not match.');
-          return;
-        }
+    if (isRegister && password !== confirmPassword) {
+      setError('Your passwords do not match.');
+      return;
+    }
 
-        setMessage('Successfully registered! you may login...');
-
+    try {
+      if (isRegister) {
+        await registerUser({ fullName, phone, email, password, role });
+        setMessage('Successfully registered! You may log in.');
         setTimeout(() => {
           navigate(`/${role}/login`, {
-            state: {
-              registrationSuccess: true,
-            },
+            state: { registrationSuccess: true },
           });
         }, 1500);
-
         return;
       }
 
-    // Check login credentials against mock users
-    const matchedUser = mockUsers.find(
-      (user) =>
-        user.email.toLowerCase() === email.toLowerCase() &&
-        user.password === password &&
-        user.role === role,
-    );
+      const { user, accessToken, token } = await loginUser({
+        email,
+        password,
+        role,
+      });
+      setUser(user, accessToken ?? token);
 
-    if (!matchedUser) {
-      setError('Invalid email or password for this account type.');
-      return;
-    }
+      const returnTo = (location.state as { from?: unknown } | null)?.from;
+      if (typeof returnTo === 'string' && returnTo.startsWith('/')) {
+        navigate(returnTo, { replace: true });
+        return;
+      }
 
-    setUser({
-      id: `${matchedUser.role}-${matchedUser.email.toLowerCase()}`,
-      fullName: matchedUser.name,
-      email: matchedUser.email,
-      phone: matchedUser.phone,
-      role: matchedUser.role,
-    });
-
-    const returnTo = (location.state as { from?: unknown } | null)?.from;
-    if (typeof returnTo === 'string' && returnTo.startsWith('/')) {
-      navigate(returnTo, { replace: true });
-      return;
-    }
-
-    // Residents return to the home page after signing in.
-    if (matchedUser.role === 'resident') {
-      navigate('/', { replace: true });
-    } else {
-      navigate('/services/providers/rapid-flow');
+      if (user.role === 'resident') {
+        navigate('/', { replace: true });
+      } else {
+        navigate('/provider/messages', { replace: true });
+      }
+    } catch (requestError: unknown) {
+      const responseMessage = axios.isAxiosError<{ message?: string }>(requestError)
+        ? requestError.response?.data?.message
+        : undefined;
+      setError(
+        responseMessage ??
+          (requestError instanceof Error
+            ? requestError.message
+            : 'The request could not be completed. Please try again.'),
+      );
     }
   }
 
