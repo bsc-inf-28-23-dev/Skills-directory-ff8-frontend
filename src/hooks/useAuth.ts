@@ -1,60 +1,51 @@
-import { useCallback, useSyncExternalStore } from "react";
+import { useEffect, useState } from "react";
 import type { User } from "../types";
+import api from "../services/api";
 
-interface AuthState {
-  user: User | null;
-  loading: boolean;
-  logout: () => void;
-  setUser: (user: User) => void;
-}
+export function useAuth() {
+  const [user, setUserState] = useState<User | null>(null);
+  const [loading, setLoading] = useState(true);
 
-function readStoredUser(): User | null {
-  try {
-    const raw = localStorage.getItem("user");
-    if (!raw) return null;
-
-    const savedUser = JSON.parse(raw) as User;
-    if (savedUser.id === "dev-resident-1") {
-      localStorage.removeItem("user");
-      return null;
+  useEffect(() => {
+    // 1. Check localStorage first (for our Force Admin test)
+    const localUser = localStorage.getItem("user");
+    if (localUser) {
+      try {
+        setUserState(JSON.parse(localUser));
+        setLoading(false);
+        return;
+      } catch (e) {}
     }
 
-    return savedUser;
-  } catch {
-    return null;
-  }
-}
+    // 2. If no local user, try the backend
+    api.get("/auth/me")
+      .then((res) => {
+        setUserState(res.data);
+        localStorage.setItem("user", JSON.stringify(res.data));
+      })
+      .catch(() => setUserState(null))
+      .finally(() => setLoading(false));
+  }, []);
 
-let currentUser = readStoredUser();
-const subscribers = new Set<() => void>();
+  const login = async (email: string, password: string) => {
+    const res = await api.post("/auth/login", { email, password });
+    setUserState(res.data);
+    localStorage.setItem("user", JSON.stringify(res.data));
+  };
 
-function subscribe(callback: () => void) {
-  subscribers.add(callback);
-  return () => subscribers.delete(callback);
-}
+  const logout = async () => {
+    try {
+      await api.post("/auth/logout");
+    } finally {
+      setUserState(null);
+      localStorage.removeItem("user");
+    }
+  };
 
-function getSnapshot() {
-  return currentUser;
-}
-
-function notifySubscribers() {
-  subscribers.forEach((callback) => callback());
-}
-
-export function useAuth(): AuthState {
-  const user = useSyncExternalStore(subscribe, getSnapshot, getSnapshot);
-
-  const setUser = useCallback((next: User) => {
+  const setUser = (next: User) => {
+    setUserState(next);
     localStorage.setItem("user", JSON.stringify(next));
-    currentUser = next;
-    notifySubscribers();
-  }, []);
+  };
 
-  const logout = useCallback(() => {
-    localStorage.removeItem("user");
-    currentUser = null;
-    notifySubscribers();
-  }, []);
-
-  return { user, loading: false, logout, setUser };
+  return { user, loading, login, logout, setUser };
 }

@@ -18,6 +18,10 @@ import { Inbox as ProviderInbox } from './pages/provider/Messages/Inbox';
 import { ProviderConversation } from './pages/provider/Messages/Conversation';
 import ProviderReviewsPage from './pages/ProviderReviewsPage';
 
+// NEW IMPORT: Provider Dashboard & Profile
+import ProviderDashboardPage from './pages/ProviderDashboardPage';
+import ProviderProfilePage from './pages/ProviderProfilePage';
+
 // Admin Dashboard
 import AdminDashboardPage from './pages/AdminDashboardPage';
 
@@ -50,6 +54,10 @@ function App() {
         <Route path="/resident/dashboard" element={<ResidentDashboardPage />} />
         <Route path="/resident/profile" element={<ResidentProfilePage />} />
         <Route path="/reviews/:providerId" element={<ProviderReviewsPage />} />
+
+        {/* Provider module - NEW */}
+        <Route path="/provider/dashboard" element={<ProviderDashboardPage />} />
+        <Route path="/provider/profile" element={<ProviderProfilePage />} />
 
         {/* Admin module */}
         <Route path="/admin/dashboard" element={<AdminDashboardPage />} />
