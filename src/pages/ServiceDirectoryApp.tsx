@@ -1,4 +1,4 @@
-import { useEffect, useState } from "react";
+import { useEffect, useRef, useState } from "react";
 import "../service-directory.css";
 import { categories, providers } from "../data/provider";
 import { loadProviders, saveProviders } from "../data/providerStorage";
@@ -10,6 +10,9 @@ import type { ServiceProvider } from "../types/serviceProvider";
 export default function ServiceDirectoryApp() {
   const [providerData, setProviderData] = useState<ServiceProvider[]>(providers);
   const [storageError, setStorageError] = useState("");
+  const providerDataRef = useRef(providerData);
+  const loadRequestRef = useRef<Promise<ServiceProvider[] | null> | null>(null);
+  const saveQueueRef = useRef<Promise<void>>(Promise.resolve());
   const navigate = useNavigate();
   const profileMatch = useMatch("/services/providers/:providerId");
   const profileProvider = providerData.find(
@@ -19,10 +22,14 @@ export default function ServiceDirectoryApp() {
   useEffect(() => {
     let isCurrent = true;
 
-    loadProviders()
+    const loadRequest = loadProviders();
+    loadRequestRef.current = loadRequest;
+
+    loadRequest
       .then((storedProviders) => {
         if (!isCurrent || !storedProviders) return;
 
+        providerDataRef.current = storedProviders;
         setProviderData(storedProviders);
       })
       .catch((error: unknown) => {
@@ -39,14 +46,23 @@ export default function ServiceDirectoryApp() {
     };
   }, []);
 
-   async function saveProvider(updatedProvider: ServiceProvider): Promise<boolean> {
-    const updatedProviders = providerData.map((provider) =>
-      provider.id === updatedProvider.id ? updatedProvider : provider,
-    );
+  async function saveProvider(updatedProvider: ServiceProvider): Promise<boolean> {
+    const saveRequest = saveQueueRef.current.then(async () => {
+      await loadRequestRef.current?.catch(() => null);
+
+      const updatedProviders = providerDataRef.current.map((provider) =>
+        provider.id === updatedProvider.id ? updatedProvider : provider,
+      );
+
+      await saveProviders(updatedProviders);
+      providerDataRef.current = updatedProviders;
+      setProviderData(updatedProviders);
+    });
+
+    saveQueueRef.current = saveRequest.catch(() => undefined);
 
     try {
-      await saveProviders(updatedProviders);
-      setProviderData(updatedProviders);
+      await saveRequest;
       setStorageError("");
       return true;
     } catch (error) {
@@ -56,7 +72,7 @@ export default function ServiceDirectoryApp() {
       );
       return false;
     }
-  } 
+  }
 
   if (profileMatch && !profileProvider) {
     return <Navigate to="/services" replace />;
