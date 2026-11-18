@@ -5,11 +5,13 @@ import {
   Briefcase,
   Calendar,
   Languages,
+  LockKeyhole,
   LogOut,
   MapPin,
   Phone,
   UserPlus,
 } from "lucide-react";
+
 import Avatar from "../components/Avatar";
 import Eyebrow from "../components/Eyebrow";
 import { useAuth } from "../hooks/useAuth";
@@ -23,6 +25,7 @@ type Tab = "profile" | "reviews";
 export default function ResidentProfilePage() {
   const { user, setUser, logout } = useAuth();
   const navigate = useNavigate();
+
   const [editing, setEditing] = useState(false);
   const [saved, setSaved] = useState(false);
   const [loggingOut, setLoggingOut] = useState(false);
@@ -33,7 +36,6 @@ export default function ResidentProfilePage() {
   const memberSince = formatDate(user.createdAt);
   const displayName = user.displayName || user.fullName;
 
-  // "Profile created" means the resident has filled in at least one bio field.
   const hasProfile = Boolean(
     user.bio ||
       user.avatarUrl ||
@@ -46,6 +48,7 @@ export default function ResidentProfilePage() {
 
   const onLogout = async () => {
     setLoggingOut(true);
+
     try {
       await logout();
     } finally {
@@ -56,7 +59,10 @@ export default function ResidentProfilePage() {
   return (
     <div className="page-container py-5" style={{ maxWidth: 1000 }}>
       <nav className="mb-4">
-        <Link to="/resident/dashboard" className="text-uppercase small fw-semibold">
+        <Link
+          to="/resident/dashboard"
+          className="text-uppercase small fw-semibold"
+        >
           ← Back to dashboard
         </Link>
       </nav>
@@ -64,10 +70,12 @@ export default function ResidentProfilePage() {
       <header className="mb-4 d-flex justify-content-between align-items-start flex-wrap gap-3">
         <div>
           <Eyebrow>{hasProfile ? "Account" : "Welcome"}</Eyebrow>
+
           <h1 className="display-heading display-heading-lg">
             {hasProfile ? "My profile" : "Create your profile"}
           </h1>
         </div>
+
         {!editing && tab === "profile" && (
           <button
             type="button"
@@ -84,14 +92,21 @@ export default function ResidentProfilePage() {
 
       {saved && !editing && (
         <p className="status-line mb-4" role="status">
-          {hasProfile ? "Your profile has been updated." : "Your profile has been created."}
+          {hasProfile
+            ? "Your profile has been updated."
+            : "Your profile has been created."}
         </p>
       )}
 
-      {/* -------- Profile hero -------- */}
+      {/* Profile hero */}
       <section className="surface-box p-4 p-md-5 mb-4">
         <div className="d-flex align-items-center gap-4 flex-wrap">
-          <Avatar name={user.fullName} imageUrl={user.avatarUrl} size={96} />
+          <Avatar
+            name={user.fullName}
+            imageUrl={user.avatarUrl}
+            size={96}
+          />
+
           <div>
             <h2
               className="display-heading display-heading-md mb-1"
@@ -99,6 +114,7 @@ export default function ResidentProfilePage() {
             >
               {displayName}
             </h2>
+
             <div
               className="small text-muted-ink text-uppercase"
               style={{ letterSpacing: "0.08em" }}
@@ -109,8 +125,12 @@ export default function ResidentProfilePage() {
         </div>
       </section>
 
-      {/* -------- Tabs -------- */}
-      <div className="tab-strip mb-4" role="tablist" aria-label="Profile sections">
+      {/* Tabs */}
+      <div
+        className="tab-strip mb-4"
+        role="tablist"
+        aria-label="Profile sections"
+      >
         <button
           type="button"
           role="tab"
@@ -119,6 +139,7 @@ export default function ResidentProfilePage() {
         >
           Profile
         </button>
+
         <button
           type="button"
           role="tab"
@@ -129,9 +150,12 @@ export default function ResidentProfilePage() {
         </button>
       </div>
 
-      {/* -------- Profile tab -------- */}
+      {/* Profile tab */}
       {tab === "profile" && (
-        <section className="surface-box p-4 p-md-5 mb-4" aria-labelledby="about-heading">
+        <section
+          className="surface-box p-4 p-md-5 mb-4"
+          aria-labelledby="about-heading"
+        >
           {editing ? (
             <ProfileForm
               user={user}
@@ -148,26 +172,55 @@ export default function ResidentProfilePage() {
                 About
               </h2>
 
-              {user.bio && <p className="review-text mb-4">{user.bio}</p>}
+              {user.bio && (
+                <p className="review-text mb-4">{user.bio}</p>
+              )}
 
               <dl className="row mb-0 g-3">
-                <InfoRow icon={<MapPin size={16} />} label="Location" value={user.location} />
-                <InfoRow icon={<Briefcase size={16} />} label="Occupation" value={user.occupation} />
+                <InfoRow
+                  icon={<MapPin size={16} />}
+                  label="Location"
+                  value={user.location}
+                />
+
+                <InfoRow
+                  icon={<Briefcase size={16} />}
+                  label="Occupation"
+                  value={user.occupation}
+                />
+
                 <InfoRow
                   icon={<Languages size={16} />}
                   label="Languages"
                   value={
-                    user.languages && user.languages.length ? user.languages.join(", ") : null
+                    user.languages && user.languages.length
+                      ? user.languages.join(", ")
+                      : null
                   }
                 />
+
                 <InfoRow
                   icon={<Calendar size={16} />}
                   label="Date of birth"
-                  value={user.dateOfBirth ? formatDate(user.dateOfBirth) : null}
+                  value={
+                    user.dateOfBirth
+                      ? formatDate(user.dateOfBirth)
+                      : null
+                  }
                 />
-                <InfoRow icon={<Phone size={16} />} label="Phone" value={user.phone} />
+
+                <InfoRow
+                  icon={<Phone size={16} />}
+                  label="Phone"
+                  value={user.phone}
+                />
+
                 <InfoRow label="Email" value={user.email} />
-                <InfoRow label="Gender" value={formatGender(user.gender)} />
+
+                <InfoRow
+                  label="Gender"
+                  value={formatGender(user.gender)}
+                />
               </dl>
             </>
           ) : (
@@ -184,6 +237,7 @@ export default function ResidentProfilePage() {
               >
                 <UserPlus size={28} />
               </span>
+
               <h2
                 id="about-heading"
                 className="display-heading display-heading-md mt-3 mb-2"
@@ -191,13 +245,15 @@ export default function ResidentProfilePage() {
               >
                 You haven't created a profile yet
               </h2>
+
               <p
                 className="text-muted-ink mb-4"
                 style={{ maxWidth: 480, margin: "0 auto" }}
               >
-                Add a photo, a short bio, your location and a few details so the
-                community knows who you are.
+                Add a photo, a short bio, your location and a few details so
+                the community knows who you are.
               </p>
+
               <button
                 type="button"
                 className="btn btn-athletic"
@@ -213,34 +269,53 @@ export default function ResidentProfilePage() {
         </section>
       )}
 
-      {/* -------- Reviews tab -------- */}
+      {/* Reviews tab */}
       {tab === "reviews" && (
-        <section className="surface-box p-4 p-md-5 mb-4" aria-labelledby="my-reviews-heading">
+        <section
+          className="surface-box p-4 p-md-5 mb-4"
+          aria-labelledby="my-reviews-heading"
+        >
           <h2 id="my-reviews-heading" className="section-label">
             My reviews
           </h2>
+
           <MyReviews />
         </section>
       )}
 
-      {/* -------- Account actions -------- */}
+      {/* Account actions */}
       <section className="surface-box p-4 mb-4">
         <h2 className="section-label">Account</h2>
+
         <p className="text-muted-ink small mb-3">
-          Signed in as <strong>{user.email}</strong>. Logging out will end this
-          session on this device.
+          Signed in as <strong>{user.email}</strong>. Logging out will end
+          this session on this device.
         </p>
-        <button
-          type="button"
-          className="btn btn-danger-outline"
-          onClick={onLogout}
-          disabled={loggingOut}
-        >
-          {loggingOut && (
-            <span className="spinner-border spinner-border-sm" aria-hidden="true" />
-          )}
-          <LogOut /> Log out
-        </button>
+
+        <div className="d-flex flex-wrap gap-2">
+          <Link
+            to="/resident/change-password"
+            className="btn btn-trade"
+          >
+            <LockKeyhole size={18} /> Change password
+          </Link>
+
+          <button
+            type="button"
+            className="btn btn-danger-outline"
+            onClick={onLogout}
+            disabled={loggingOut}
+          >
+            {loggingOut && (
+              <span
+                className="spinner-border spinner-border-sm"
+                aria-hidden="true"
+              />
+            )}
+
+            <LogOut /> Log out
+          </button>
+        </div>
       </section>
     </div>
   );
@@ -264,8 +339,13 @@ function InfoRow({
         {icon}
         {label}
       </dt>
+
       <dd className="col-sm-8 mb-0">
-        {value ? value : <span className="text-muted-ink">Not provided</span>}
+        {value ? (
+          value
+        ) : (
+          <span className="text-muted-ink">Not provided</span>
+        )}
       </dd>
     </>
   );
@@ -273,15 +353,20 @@ function InfoRow({
 
 function formatGender(g?: Gender | null): string | null {
   if (!g) return null;
+
   switch (g) {
     case "female":
       return "Female";
+
     case "male":
       return "Male";
+
     case "other":
       return "Other";
+
     case "prefer_not_to_say":
       return "Prefer not to say";
+
     default:
       return null;
   }

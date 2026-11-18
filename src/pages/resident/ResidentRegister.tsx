@@ -1,6 +1,5 @@
-
-import AuthForm from '../../components/AuthForm/AuthForm';
+import { Navigate } from 'react-router-dom';
 
 export default function ResidentRegister() {
-  return <AuthForm role="resident" mode="register" />;
+  return <Navigate to="/register" replace />;
 }

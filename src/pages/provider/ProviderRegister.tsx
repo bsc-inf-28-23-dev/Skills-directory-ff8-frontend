@@ -1,5 +1,6 @@
-import AuthForm from '../../components/AuthForm/AuthForm';
+
+import { Navigate } from 'react-router-dom';
 
 export default function ProviderRegister() {
-  return <AuthForm role="provider" mode="register" />;
+  return <Navigate to="/register" replace />;
 }
