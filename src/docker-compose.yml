@@ -1,40 +1,10 @@
-version: '3.8'
-
 services:
-  # The Backend API (NestJS)
-  backend:
-    build: ./backend
-    ports:
-      - "3000:3000"
-    environment:
-      - DB_HOST=db
-      - DB_PORT=5432
-      - DB_USERNAME=postgres
-      - DB_PASSWORD=postgres
-      - DB_NAME=skillz_directory
-      - JWT_SECRET=super-secret-key
-    depends_on:
-      - db
-
-  # The Database (PostgreSQL)
-  db:
-    image: postgres:15
-    ports:
-      - "5432:5432"
-    environment:
-      - POSTGRES_USER=postgres
-      - POSTGRES_PASSWORD=postgres
-      - POSTGRES_DB=skillz_directory
-    volumes:
-      - postgres_data:/var/lib/postgresql/data
-
-  # The Frontend (React + Nginx)
   frontend:
-    build: .
+    build: 
+      context: .
+      args:
+        - VITE_API_BASE_URL=http://192.168.1.101:3000/api
+    container_name: skillz-frontend
     ports:
       - "8080:80"
-    depends_on:
-      - backend
-
-volumes:
-  postgres_data:
+    restart: unless-stopped

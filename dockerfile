@@ -1,3 +1,4 @@
+
 # Stage 1: Build React application
 FROM node:22-alpine AS build
 
@@ -18,7 +19,7 @@ RUN npm run build
 # Stage 2: Serve using Nginx
 FROM nginx:alpine
 
-# Copy custom nginx config to handle React routing
+# Copy custom Nginx configuration
 COPY nginx.conf /etc/nginx/conf.d/default.conf
 
 # Copy production build to Nginx
