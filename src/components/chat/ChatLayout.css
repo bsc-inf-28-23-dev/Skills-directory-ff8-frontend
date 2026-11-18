@@ -1,0 +1,40 @@
+.chat-layout-container {
+  display: flex;
+  height: calc(100vh - 70px); /* Fills screen below Navbar */
+  background-color: #f0f2f5; /* WhatsApp Web background */
+  overflow: hidden;
+}
+
+.chat-layout-sidebar {
+  width: 35%;
+  min-width: 320px;
+  max-width: 400px;
+  background-color: #ffffff;
+  border-right: 1px solid #e5e4e7;
+  display: flex;
+  flex-direction: column;
+}
+
+.chat-layout-main {
+  flex: 1;
+  display: flex;
+  flex-direction: column;
+  background-color: #efeae2;
+}
+
+/* Make ChatWindow fill the main area */
+.chat-layout-main .chat-page {
+  max-width: 100% !important;
+  height: 100%;
+  margin: 0;
+  padding: 0;
+  display: flex;
+  flex-direction: column;
+}
+
+.chat-layout-main .chat-card {
+  border-radius: 0;
+  border: none;
+  box-shadow: none;
+  height: 100%;
+}

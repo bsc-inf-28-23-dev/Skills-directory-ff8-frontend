@@ -18,8 +18,7 @@ import { Inbox as ProviderInbox } from './pages/provider/Messages/Inbox';
 import { ProviderConversation } from './pages/provider/Messages/Conversation';
 import ProviderReviewsPage from './pages/ProviderReviewsPage';
 
-// NEW IMPORT: Provider Dashboard & Profile
-import ProviderDashboardPage from './pages/ProviderDashboardPage';
+// Provider Profile (No Dashboard import!)
 import ProviderProfilePage from './pages/ProviderProfilePage';
 
 // Admin Dashboard
@@ -55,8 +54,7 @@ function App() {
         <Route path="/resident/profile" element={<ResidentProfilePage />} />
         <Route path="/reviews/:providerId" element={<ProviderReviewsPage />} />
 
-        {/* Provider module - NEW */}
-        <Route path="/provider/dashboard" element={<ProviderDashboardPage />} />
+        {/* Provider module */}
         <Route path="/provider/profile" element={<ProviderProfilePage />} />
 
         {/* Admin module */}
