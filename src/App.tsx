@@ -1,3 +1,4 @@
+import { MessagesPage } from './pages/MessagesPage';
 import { lazy, Suspense } from 'react';
 import { BrowserRouter, Navigate, Route, Routes } from 'react-router-dom';
 import AppNavigation from './components/AppNavigation';
@@ -18,8 +19,7 @@ import { Inbox as ProviderInbox } from './pages/provider/Messages/Inbox';
 import { ProviderConversation } from './pages/provider/Messages/Conversation';
 import ProviderReviewsPage from './pages/ProviderReviewsPage';
 
-// NEW IMPORT: Provider Dashboard & Profile
-import ProviderDashboardPage from './pages/ProviderDashboardPage';
+// Provider Profile (No Dashboard import!)
 import ProviderProfilePage from './pages/ProviderProfilePage';
 
 // Admin Dashboard
@@ -46,6 +46,8 @@ function App() {
         <Route path="/provider/register" element={<ProviderRegister />} />
 
         {/* Chat routes */}
+        <Route path="/provider/messages" element={<MessagesPage />} />
+        <Route path="/resident/messages" element={<MessagesPage />} />
         <Route path="/provider/messages" element={<ProviderInbox />} />
         <Route path="/provider/conversation/:residentId" element={<ProviderConversation />} />
         <Route path="/conversation/:providerId" element={<Conversation />} />
@@ -55,8 +57,7 @@ function App() {
         <Route path="/resident/profile" element={<ResidentProfilePage />} />
         <Route path="/reviews/:providerId" element={<ProviderReviewsPage />} />
 
-        {/* Provider module - NEW */}
-        <Route path="/provider/dashboard" element={<ProviderDashboardPage />} />
+        {/* Provider module */}
         <Route path="/provider/profile" element={<ProviderProfilePage />} />
 
         {/* Admin module */}

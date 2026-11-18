@@ -1,6 +1,6 @@
 export interface Message {
   id: string;
-  roomId: string;
+  conversationId: string; // <--- ADD THIS LINE
   senderId: string;
   senderName: string;
   content: string;
