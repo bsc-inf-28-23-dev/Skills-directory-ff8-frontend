@@ -42,7 +42,7 @@
 }
 
 .sidebar-item--active {
-  background-color: #fff5ed !important; /* Light orange for active */
+  background-color: #fff5ed;
   border-left: 4px solid #ff8c1a;
 }
 
@@ -81,7 +81,7 @@
 
 .sidebar-time {
   font-size: 0.75rem;
-  color: #6b6375;
+  color: #4a4552; /* Darkened for contrast */
 }
 
 .sidebar-bottom {
@@ -92,7 +92,7 @@
 
 .sidebar-preview {
   font-size: 0.85rem;
-  color: #6b6375;
+  color: #4a4552; /* Darkened for contrast */
   white-space: nowrap;
   overflow: hidden;
   text-overflow: ellipsis;

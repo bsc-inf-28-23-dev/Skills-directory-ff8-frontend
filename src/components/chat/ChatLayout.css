@@ -21,10 +21,8 @@
   flex-direction: column;
   background-color: #efeae2;
 }
-
-/* Make ChatWindow fill the main area */
 .chat-layout-main .chat-page {
-  max-width: 100% !important;
+  max-width: 100%; 
   height: 100%;
   margin: 0;
   padding: 0;

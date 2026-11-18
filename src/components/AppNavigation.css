@@ -239,4 +239,14 @@
     padding-top: 6px;
     border-top: 1px solid #e8e4df;
   }
+  .nav-badge {
+  background-color: #e8462a;
+  color: white;
+  font-size: 0.65rem;
+  font-weight: 700;
+  padding: 0.1rem 0.4rem;
+  border-radius: 10px;
+  margin-left: 0.5rem;
+  vertical-align: middle;
+}
 }

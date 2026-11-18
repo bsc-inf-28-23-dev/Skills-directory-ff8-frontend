@@ -1,3 +1,4 @@
+import { MessagesPage } from './pages/MessagesPage';
 import { lazy, Suspense } from 'react';
 import { BrowserRouter, Navigate, Route, Routes } from 'react-router-dom';
 import AppNavigation from './components/AppNavigation';
@@ -45,6 +46,8 @@ function App() {
         <Route path="/provider/register" element={<ProviderRegister />} />
 
         {/* Chat routes */}
+        <Route path="/provider/messages" element={<MessagesPage />} />
+        <Route path="/resident/messages" element={<MessagesPage />} />
         <Route path="/provider/messages" element={<ProviderInbox />} />
         <Route path="/provider/conversation/:residentId" element={<ProviderConversation />} />
         <Route path="/conversation/:providerId" element={<Conversation />} />

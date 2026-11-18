@@ -5,12 +5,12 @@ import { ChatWindow } from '../../../components/chat/ChatWindow';
 import { ChatSidebar } from '../../../components/chat/ChatSidebar';
 import { ChatLayout } from '../../../components/chat/ChatLayout';
 
-// Mock Data simulating backend
 const FAKE_CONVERSATIONS: Conversation[] = [
   {
     id: 'conv-1',
     otherPartyId: 'resident-1',
     otherPartyName: 'Resident A',
+    otherPartyRole: 'resident',
     lastMessage: 'Hey, my kitchen sink is leaking badly.',
     lastMessageAt: new Date().toISOString(),
     unreadCount: 2,
@@ -19,6 +19,7 @@ const FAKE_CONVERSATIONS: Conversation[] = [
     id: 'conv-2',
     otherPartyId: 'resident-2',
     otherPartyName: 'Resident B',
+    otherPartyRole: 'resident',
     lastMessage: 'Thanks for the quick fix!',
     lastMessageAt: new Date(Date.now() - 3600000).toISOString(),
     unreadCount: 0,
@@ -39,7 +40,6 @@ export const ProviderConversation: React.FC = () => {
   const [activeConv, setActiveConv] = useState<Conversation>(FAKE_CONVERSATIONS[0]);
   const [messages, setMessages] = useState<Message[]>(MOCK_MESSAGES[activeConv.id] || []);
 
-  // When you click a different person in the sidebar
   const handleSelectConversation = (conv: Conversation) => {
     setActiveConv(conv);
     setMessages(MOCK_MESSAGES[conv.id] || []);
@@ -49,7 +49,7 @@ export const ProviderConversation: React.FC = () => {
     const newMsg: Message = {
       id: `m-${Date.now()}`,
       conversationId: activeConv.id,
-      senderId: 'prov-1', // Real ID would come from Auth
+      senderId: 'prov-1',
       senderName: 'You',
       content: text,
       createdAt: new Date().toISOString(),
@@ -70,7 +70,6 @@ export const ProviderConversation: React.FC = () => {
       <ChatWindow
         myRole="provider"
         myId="prov-1"
-        otherPartyId={activeConv.otherPartyId}
         otherPartyName={activeConv.otherPartyName}
         messages={messages}
         onSend={handleSend}
