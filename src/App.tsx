@@ -1,7 +1,7 @@
 import { lazy, Suspense } from 'react';
 import { BrowserRouter, Navigate, Route, Routes } from 'react-router-dom';
 import AppNavigation from './components/AppNavigation';
-import Home from './pages/public/Home/Home';
+import AboutPage from './pages/public/AboutPage';
 import Login from './pages/public/Login/Login';
 import Register from './pages/public/Register/Register';
 import ForgotPassword from './pages/public/ForgotPassword/ForgotPassword';
@@ -24,13 +24,28 @@ import AdminDashboardPage from './pages/AdminDashboardPage';
 // Service directory (Lazy Loaded)
 const ServiceDirectoryApp = lazy(() => import('./pages/ServiceDirectoryApp'));
 
+function ServiceDirectoryRoute() {
+  return (
+    <Suspense fallback={<div className="p-4">Loading services...</div>}>
+      <ServiceDirectoryApp />
+    </Suspense>
+  );
+}
+
 function App() {
   return (
     <BrowserRouter>
       <AppNavigation />
       <Routes>
-        {/* Public pages */}
-        <Route path="/" element={<Home />} />
+        {/* The service directory is the public landing page. */}
+        <Route path="/" element={<ServiceDirectoryRoute />} />
+        <Route path="/about" element={<AboutPage />} />
+        <Route path="/services" element={<Navigate to="/#services" replace />} />
+        <Route
+          path="/services/providers/:providerId"
+          element={<ServiceDirectoryRoute />}
+        />
+        <Route path="/services/*" element={<Navigate to="/#services" replace />} />
 
         {/* Authentication */}
         <Route path="/login" element={<Login />} />
@@ -53,16 +68,6 @@ function App() {
 
         {/* Admin module */}
         <Route path="/admin/dashboard" element={<AdminDashboardPage />} />
-
-        {/* Service directory */}
-        <Route
-          path="/services/*"
-          element={
-            <Suspense fallback={<div className="p-4">Loading services...</div>}>
-              <ServiceDirectoryApp />
-            </Suspense>
-          }
-        />
 
         {/* Fallback */}
         <Route path="*" element={<Navigate to="/" replace />} />

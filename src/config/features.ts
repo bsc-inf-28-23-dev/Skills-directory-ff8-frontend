@@ -5,8 +5,8 @@
  * Set each to true when the matching page is merged and its route is registered.
  */
 export const FEATURES = {
-  /** /services (Find Services page) */
-  searchPage: false,
+  /** / (Find Services landing page) */
+  searchPage: true,
   /** /messages (conversation list and chat) */
   messaging: false,
   /** /providers/:providerId (full provider profile page) */

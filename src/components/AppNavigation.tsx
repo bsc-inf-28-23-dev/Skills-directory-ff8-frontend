@@ -1,4 +1,4 @@
-import { useEffect, useState } from "react";
+import { useState } from "react";
 import { LogOut } from "lucide-react";
 import { Link, NavLink, useLocation, useNavigate } from "react-router-dom";
 import { useAuth } from "../hooks/useAuth";
@@ -15,22 +15,6 @@ export default function AppNavigation() {
   const navigate = useNavigate();
   const { user, logout } = useAuth();
   const [menuOpen, setMenuOpen] = useState(false);
-  const [aboutActive, setAboutActive] = useState(false);
-
-  useEffect(() => {
-    if (pathname !== "/") return;
-
-    const aboutSection = document.getElementById("about-section");
-    if (!aboutSection) return;
-
-    const observer = new IntersectionObserver(
-      ([entry]) => setAboutActive(entry.isIntersecting),
-      { rootMargin: "-20% 0px -65% 0px" },
-    );
-    observer.observe(aboutSection);
-
-    return () => observer.disconnect();
-  }, [pathname]);
 
   const handleHomeClick = () => {
     setMenuOpen(false);
@@ -69,25 +53,24 @@ export default function AppNavigation() {
   const links: NavigationLink[] = isCompactPage
     ? [
         { label: "Home", to: "/", end: true },
-        { label: "Services", to: "/services" },
+        { label: "About", to: "/about" },
       ]
     : isProviderArea
     ? [
-        { label: "Services", to: "/services" },
+        { label: "About", to: "/about" },
         { label: "Messages", to: "/provider/messages" },
         // REMOVED "Profile" from text links
       ]
     : isResidentArea
       ? [
           { label: "Dashboard", to: "/resident/dashboard" },
-          { label: "Services", to: "/services" },
+          { label: "About", to: "/about" },
           { label: "Messages", to: "/resident/dashboard#recent-conversations-heading" },
           // REMOVED "Profile" from text links
         ]
       : [
           { label: "Home", to: "/", end: true },
-          { label: "Services", to: "/services" },
-          { label: "About", to: "/#about-section" },
+          { label: "About", to: "/about" },
         ];
 
   return (
@@ -135,18 +118,9 @@ export default function AppNavigation() {
                   ? handleHomeClick
                   : () => setMenuOpen(false)
               }
-              className={({ isActive }) => {
-                const isHomeLinkActive =
-                  pathname === "/" &&
-                  (link.label === "About" ? aboutActive : !aboutActive);
-                const isActiveLink =
-                  pathname === "/" &&
-                  (link.label === "Home" || link.label === "About")
-                    ? isHomeLinkActive
-                    : isActive;
-
-                return `app-navigation__link${isActiveLink ? " is-active" : ""}`;
-              }}
+              className={({ isActive }) =>
+                `app-navigation__link${isActive ? " is-active" : ""}`
+              }
             >
               {link.label}
             </NavLink>

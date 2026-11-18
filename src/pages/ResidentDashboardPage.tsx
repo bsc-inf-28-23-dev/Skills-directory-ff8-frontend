@@ -69,7 +69,7 @@ export default function ResidentDashboardPage() {
 
           <div className="mt-4 d-flex flex-wrap gap-2">
             <FeatureLink
-              to="/services"
+              to="/#services"
               enabled={FEATURES.searchPage}
               className="btn btn-athletic"
             >

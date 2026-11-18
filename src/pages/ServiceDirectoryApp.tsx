@@ -67,7 +67,7 @@ export default function ServiceDirectoryApp() {
   if (loading) return <LoadingSpinner label="Loading providers..." />;
   if (loadError) return <ErrorAlert message={loadError} />;
   if (profileMatch && !profileProvider) {
-    return <Navigate to="/services" replace />;
+    return <Navigate to="/#services" replace />;
   }
 
   return (
@@ -84,7 +84,7 @@ export default function ServiceDirectoryApp() {
             provider={profileProvider}
             providers={providerData}
             categories={categories}
-            onBack={() => navigate("/services")}
+            onBack={() => navigate("/#services")}
             onSave={saveProvider}
             onSelectProvider={(providerId) =>
               navigate(`/services/providers/${providerId}`)
