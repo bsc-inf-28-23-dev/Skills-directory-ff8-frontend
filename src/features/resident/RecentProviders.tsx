@@ -4,7 +4,6 @@ import EmptyState from "../../components/EmptyState";
 import ErrorAlert from "../../components/ErrorAlert";
 import LoadingSpinner from "../../components/LoadingSpinner";
 import ProviderCover from "../../components/ProviderCover";
-import { FEATURES } from "../../config/features";
 import { useAsync } from "../../hooks/useAsync";
 import { getRecentlyViewedProviders } from "../../services/residentService";
 import { StarDisplay } from "../reviews/StarRating";
@@ -48,16 +47,16 @@ export default function RecentProviders() {
               {p.description && <p className="text-muted-ink small mb-0 text-truncate-2">{p.description}</p>}
               <div className="d-flex gap-2 mt-auto pt-3">
                 <Link
-                  to={FEATURES.providerProfilePage ? `/providers/${p.id}` : `/providers/${p.id}/reviews`}
+                to={`/conversation/${p.id}`}
                   className="btn btn-athletic flex-fill"
                 >
-                  {FEATURES.providerProfilePage ? "Live chat" : "Reviews"} <ArrowUpRight />
+                Message <ArrowUpRight />
                 </Link>
                 <Link
-                  to={FEATURES.providerProfilePage ? `/providers/${p.id}` : `/providers/${p.id}/reviews`}
+                to={`/reviews/${p.id}`}
                   className="btn btn-trade flex-fill"
                 >
-                  Profile
+                Reviews
                 </Link>
               </div>
             </div>

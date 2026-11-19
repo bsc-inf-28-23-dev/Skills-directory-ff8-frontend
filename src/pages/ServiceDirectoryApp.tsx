@@ -2,19 +2,47 @@ import { useEffect, useState } from "react";
 import "../service-directory.css";
 import { categories, providers } from "../data/provider";
 import { loadProviders, saveProviders } from "../data/providerStorage";
-import { Navigate, useMatch, useNavigate } from "react-router-dom";
+import {
+  Navigate,
+  useLocation,
+  useMatch,
+  useNavigate,
+} from "react-router-dom";
 import DirectoryPage from "./DirectoryPage";
-import ProviderProfilePage from "./ProviderProfilepage";
+import ProviderProfilePage from "./provider/ProviderProfileManagementPage";
+import SavedServicesPage from "./SavedServicesPage";
+import ServiceDetailsPage from "./ServiceDetailsPage";
+import { useAuth } from "../hooks/useAuth";
 import type { ServiceProvider } from "../types/serviceProvider";
+import {
+  createProviderProfile,
+  getProviderProfileRouteId,
+} from "../data/providerAccount";
 
 export default function ServiceDirectoryApp() {
   const [providerData, setProviderData] = useState<ServiceProvider[]>(providers);
   const [storageError, setStorageError] = useState("");
+  const [providerDataLoading, setProviderDataLoading] = useState(true);
   const navigate = useNavigate();
-  const profileMatch = useMatch("/services/providers/:providerId");
-  const profileProvider = providerData.find(
-    (provider) => provider.id === profileMatch?.params.providerId,
+  const location = useLocation();
+  const { user, setUser } = useAuth();
+  const serviceMatch = useMatch("/services/providers/:providerId");
+  const editorMatch = useMatch("/provider/profile/:providerId");
+  const savedServicesMatch = useMatch("/resident/saved");
+  const providerId =
+    serviceMatch?.params.providerId ?? editorMatch?.params.providerId;
+  const storedProvider = providerData.find(
+    (provider) => provider.id === providerId,
   );
+  const canManageProviderProfile =
+    editorMatch !== null &&
+    user?.role === "provider" &&
+    getProviderProfileRouteId(user) === editorMatch.params.providerId;
+  const profileProvider =
+    storedProvider ??
+    (canManageProviderProfile && user
+      ? createProviderProfile(user, categories, editorMatch.params.providerId)
+      : undefined);
 
   useEffect(() => {
     let isCurrent = true;
@@ -32,6 +60,9 @@ export default function ServiceDirectoryApp() {
             "Saved profile data could not be loaded. The sample profiles are shown instead.",
           );
         }
+      })
+      .finally(() => {
+        if (isCurrent) setProviderDataLoading(false);
       });
 
     return () => {
@@ -39,14 +70,23 @@ export default function ServiceDirectoryApp() {
     };
   }, []);
 
-   async function saveProvider(updatedProvider: ServiceProvider): Promise<boolean> {
-    const updatedProviders = providerData.map((provider) =>
-      provider.id === updatedProvider.id ? updatedProvider : provider,
+  async function saveProvider(
+    updatedProvider: ServiceProvider,
+    updatedUser: NonNullable<typeof user>,
+  ): Promise<boolean> {
+    const hasProvider = providerData.some(
+      (provider) => provider.id === updatedProvider.id,
     );
+    const updatedProviders = hasProvider
+      ? providerData.map((provider) =>
+          provider.id === updatedProvider.id ? updatedProvider : provider,
+        )
+      : [...providerData, updatedProvider];
 
     try {
       await saveProviders(updatedProviders);
       setProviderData(updatedProviders);
+      setUser({ ...updatedUser, providerProfileId: updatedProvider.id });
       setStorageError("");
       return true;
     } catch (error) {
@@ -58,8 +98,38 @@ export default function ServiceDirectoryApp() {
     }
   } 
 
-  if (profileMatch && !profileProvider) {
-    return <Navigate to="/services" replace />;
+  if (serviceMatch && !profileProvider) {
+    return <Navigate to="/#services" replace />;
+  }
+
+  if (editorMatch && !user) {
+    return (
+      <Navigate
+        to="/login"
+        replace
+        state={{ from: `${location.pathname}${location.search}` }}
+      />
+    );
+  }
+
+  if (editorMatch && user && user.role !== "provider") {
+    return <Navigate to="/resident/dashboard" replace />;
+  }
+
+  if (
+    editorMatch &&
+    user?.role === "provider" &&
+    getProviderProfileRouteId(user) !== editorMatch.params.providerId
+  ) {
+    return <Navigate to="/provider/dashboard" replace />;
+  }
+
+  if (editorMatch && providerDataLoading) {
+    return (
+      <main className="provider-profile-loading" role="status">
+        Loading your business profile…
+      </main>
+    );
   }
 
   return (
@@ -70,27 +140,52 @@ export default function ServiceDirectoryApp() {
             {storageError}
           </div>
         )}
-        {profileProvider ? (
+        {savedServicesMatch ? (
+          <SavedServicesPage providers={providerData.map(toResidentVisibleProvider)} />
+        ) : serviceMatch && profileProvider ? (
+          <ServiceDetailsPage
+            provider={toResidentVisibleProvider(profileProvider)}
+            onBack={() => navigate("/#services")}
+          />
+        ) : editorMatch && profileProvider ? (
           <ProviderProfilePage
             key={profileProvider.id}
             provider={profileProvider}
-            providers={providerData}
+            user={user!}
             categories={categories}
-            onBack={() => navigate("/services")}
+            onBack={() => navigate("/provider/dashboard")}
             onSave={saveProvider}
-            onSelectProvider={(providerId) =>
-              navigate(`/services/providers/${providerId}`)
-            }
           />
         ) : (
           <DirectoryPage
-            providers={providerData}
-            categories={categories.filter((category) =>
-              providerData.some((provider) => provider.category === category),
-            )}
+            providers={providerData.map(toResidentVisibleProvider)}
+            categories={categories}
           />
         )}
       </div>
     </div>
   );
+}
+
+function toResidentVisibleProvider(provider: ServiceProvider): ServiceProvider {
+  if (!provider.profile) return provider;
+
+  const profile = provider.profile;
+  return {
+    ...provider,
+    profile: {
+      ...profile,
+      registrationDetails: "",
+      businessAddress: profile.physicalPremises ? profile.businessAddress : "",
+      publicPhone: profile.showPublicPhone ? profile.publicPhone : undefined,
+      publicEmail: profile.showPublicEmail ? profile.publicEmail : undefined,
+      verificationDocuments: profile.verificationDocuments
+        .filter((document) => document.status === "verified")
+        .map((document) => ({
+          ...document,
+          dataUrl: "",
+          feedback: undefined,
+        })),
+    },
+  };
 }

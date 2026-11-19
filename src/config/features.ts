@@ -6,7 +6,7 @@
  */
 export const FEATURES = {
   /** /services (Find Services page) */
-  searchPage: false,
+  searchPage: true,
   /** /messages (conversation list and chat) */
   messaging: false,
   /** /providers/:providerId (full provider profile page) */

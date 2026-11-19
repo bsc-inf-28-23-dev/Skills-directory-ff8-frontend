@@ -7,6 +7,7 @@ export interface MockUser {
   password: string;
   phone: string;
   role: UserRole;
+  providerProfileId?: string;
 }
 
 export const mockUsers: MockUser[] = [
@@ -23,5 +24,6 @@ export const mockUsers: MockUser[] = [
     password: 'Provider123',
     phone: '0888310519',
     role: 'provider',
+    providerProfileId: 'rapid-flow',
   },
 ];

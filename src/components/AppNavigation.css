@@ -90,6 +90,36 @@
   transition: color 160ms ease;
 }
 
+.app-navigation__link.has-icon {
+  display: inline-flex;
+  align-items: center;
+  gap: 7px;
+}
+
+.app-navigation__link-icon {
+  position: relative;
+  display: inline-flex;
+  width: 20px;
+  height: 20px;
+  align-items: center;
+  justify-content: center;
+  color: #687783;
+}
+
+.app-navigation__notification {
+  position: absolute;
+  top: -4px;
+  right: -5px;
+  display: grid;
+  width: 14px;
+  height: 14px;
+  place-items: center;
+  border: 1.5px solid #fff;
+  border-radius: 50%;
+  background: #e84900;
+  color: #fff;
+}
+
 .app-navigation__link:hover,
 .app-navigation__link.is-active {
   color: #e84900;
@@ -142,6 +172,50 @@
   border-color: #c83f00;
   background: #c83f00;
   color: #fff;
+}
+
+.app-navigation__profile-icon {
+  display: inline-grid;
+  width: 42px;
+  height: 42px;
+  place-items: center;
+  border: 1px solid #e8e4df;
+  border-radius: 50%;
+  background: #fff;
+  color: #263746;
+  transition:
+    border-color 160ms ease,
+    color 160ms ease;
+}
+
+.app-navigation__profile-icon:hover {
+  border-color: #e84900;
+  color: #e84900;
+}
+
+.app-navigation__logout {
+  display: inline-flex;
+  min-height: 42px;
+  align-items: center;
+  justify-content: center;
+  gap: 7px;
+  padding: 0 14px;
+  border: 1px solid #e8e4df;
+  border-radius: 8px;
+  background: #fff;
+  color: #263746;
+  font-size: 12px;
+  font-weight: 700;
+  transition:
+    border-color 160ms ease,
+    background 160ms ease,
+    color 160ms ease;
+}
+
+.app-navigation__logout:hover {
+  border-color: #e84900;
+  background: #fff7f2;
+  color: #c83f00;
 }
 
 .app-navigation__toggle {
@@ -212,7 +286,10 @@
   }
 
   .app-navigation__actions {
+    align-items: flex-start;
     justify-content: flex-start;
+    flex-wrap: wrap;
+    gap: 10px;
     padding-top: 6px;
     border-top: 1px solid #e8e4df;
   }

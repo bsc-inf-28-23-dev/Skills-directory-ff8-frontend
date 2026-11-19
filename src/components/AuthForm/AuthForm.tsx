@@ -6,13 +6,17 @@ import { mockUsers } from '../../data/mockUsers';
 import { useAuth } from '../../hooks/useAuth';
 
 type AuthFormProps = {
-  role: 'resident' | 'provider';
+  role?: 'resident' | 'provider';
   mode: 'login' | 'register';
 };
 
 export default function AuthForm({ role, mode }: AuthFormProps) {
   const isRegister = mode === 'register';
-  const roleName = role === 'resident' ? 'Resident' : 'Service Provider';
+  const roleName = role
+    ? role === 'resident'
+      ? 'Resident'
+      : 'Service Provider'
+    : 'Skillz Directory';
   const navigate = useNavigate();
   const location = useLocation();
   const { setUser } = useAuth();
@@ -33,39 +37,44 @@ export default function AuthForm({ role, mode }: AuthFormProps) {
 
     // Registration validation
           if (isRegister) {
-        if (password !== confirmPassword) {
-          setError('Your passwords do not match.');
-          return;
-        }
-
-        setMessage('Successfully registered! you may login...');
-
-        setTimeout(() => {
-          navigate(`/${role}/login`, {
-            state: {
-              registrationSuccess: true,
-            },
-          });
-        }, 1500);
-
+      if (!role) {
+        setError('Select an account type before creating an account.');
         return;
       }
 
-    // Check login credentials against mock users
+      if (password !== confirmPassword) {
+        setError('Your passwords do not match.');
+        return;
+      }
+
+      setMessage('Successfully registered! you may login...');
+
+      setTimeout(() => {
+        navigate(`/${role}/login`, {
+        state: {
+          registrationSuccess: true,
+        },
+        });
+      }, 1500);
+
+      return;
+    }
+
     const matchedUser = mockUsers.find(
       (user) =>
         user.email.toLowerCase() === email.toLowerCase() &&
         user.password === password &&
-        user.role === role,
+        (!role || user.role === role),
     );
 
     if (!matchedUser) {
-      setError('Invalid email or password for this account type.');
+      setError('Invalid email or password.');
       return;
     }
 
     setUser({
       id: `${matchedUser.role}-${matchedUser.email.toLowerCase()}`,
+      providerProfileId: matchedUser.providerProfileId,
       fullName: matchedUser.name,
       email: matchedUser.email,
       phone: matchedUser.phone,
@@ -78,11 +87,10 @@ export default function AuthForm({ role, mode }: AuthFormProps) {
       return;
     }
 
-    // Residents return to the home page after signing in.
     if (matchedUser.role === 'resident') {
-      navigate('/', { replace: true });
+      navigate('/resident/dashboard', { replace: true });
     } else {
-      navigate('/services/providers/rapid-flow');
+      navigate('/provider/dashboard', { replace: true });
     }
   }
 
@@ -100,7 +108,9 @@ export default function AuthForm({ role, mode }: AuthFormProps) {
           <p>
             {isRegister
               ? `Register as a ${roleName.toLowerCase()}.`
-              : `Sign in to your ${roleName.toLowerCase()} account.`}
+              : role
+                ? `Sign in to your ${roleName.toLowerCase()} account.`
+                : 'Sign in and we will open the right workspace for your account.'}
           </p>
         </div>
 
@@ -208,14 +218,26 @@ export default function AuthForm({ role, mode }: AuthFormProps) {
             ? 'Already have an account?'
             : "Don't have an account?"}{' '}
 
-          <Link to={isRegister ? `/${role}/login` : `/${role}/register`}>
+          <Link
+            to={
+              isRegister
+                ? role
+                  ? `/${role}/login`
+                  : '/login'
+                : role
+                  ? `/${role}/register`
+                  : '/register'
+            }
+          >
             {isRegister ? 'Sign in' : 'Create account'}
           </Link>
         </p>
 
-        <p className="auth-role-note">
-          Account type: <strong>{roleName}</strong>
-        </p>
+        {role && (
+          <p className="auth-role-note">
+            Account type: <strong>{roleName}</strong>
+          </p>
+        )}
       </section>
     </main>
   );

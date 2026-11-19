@@ -1,5 +1,6 @@
 import { useEffect, useState, type FormEvent } from 'react'
 import { useLocation } from 'react-router-dom'
+import AboutSection from './AboutSection'
 import './Home.css'
 
 // IMPORTANT: Change this if your teammate uses a different route.
@@ -47,7 +48,6 @@ function FeatureIcon({ name }: { name: FeatureIconName }) {
 function Home() {
   const { hash } = useLocation()
   const [location, setLocation] = useState('')
-  const [showMoreAbout, setShowMoreAbout] = useState(false)
 
   useEffect(() => {
     if (!hash) return
@@ -196,57 +196,7 @@ function Home() {
         </article>
       </section>
 
-      {/* About section */}
-      <section
-        id="about-section"
-        className="home-about"
-        aria-labelledby="about-heading"
-      >
-        <div className="about-image">
-          <img
-            src="https://thekampalaguy.com/assets/hero-cleaning-Dnmhbl_n.png"
-            alt="Professional cleaner working in a living room"
-            loading="lazy"
-          />
-        </div>
-
-        <div className="about-content">
-          <p className="section-label">ABOUT US</p>
-
-          <h2 id="about-heading">
-            Connecting residents
-            <br />
-            with local professionals.
-          </h2>
-
-          <p>
-            Skillz Directory is a community-based platform that makes
-            it easy for households to discover service providers,
-            from electricians and plumbers to mechanics, carpenters,
-            painters and cleaners.
-          </p>
-
-          {showMoreAbout && (
-            <p className="about-extra">
-              Our goal is to make finding local services simpler by
-              helping residents discover professionals working in
-              their areas.
-            </p>
-          )}
-
-          <button
-            type="button"
-            className="about-learn-more"
-            onClick={() => setShowMoreAbout((previous) => !previous)}
-            aria-expanded={showMoreAbout}
-          >
-            {showMoreAbout ? 'Show Less' : 'Learn More'}
-            <span aria-hidden="true">
-              {showMoreAbout ? ' ↑' : ' →'}
-            </span>
-          </button>
-        </div>
-      </section>
+      <AboutSection />
 
       {/* Service provider call-to-action */}
       <section className="home-callout">
