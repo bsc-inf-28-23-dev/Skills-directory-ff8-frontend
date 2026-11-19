@@ -1,3 +1,4 @@
+
 import { lazy, Suspense, type ReactNode } from "react";
 import {
   BrowserRouter,
@@ -19,6 +20,7 @@ import AboutPage from "./pages/public/AboutPage";
 import ForgotPassword from "./pages/public/ForgotPassword/ForgotPassword";
 import Login from "./pages/public/Login/Login";
 import Register from "./pages/public/Register/Register";
+import ChangePassword from "./pages/ChangePassword/ChangePassword";
 import ProviderLogin from "./pages/provider/ProviderLogin";
 import ProviderRegister from "./pages/provider/ProviderRegister";
 import ProviderDashboardPage from "./pages/provider/ProviderDashboardPage";
@@ -40,12 +42,15 @@ function ServiceDirectoryRoute() {
 
 function HomeRoute() {
   const { user } = useAuth();
+
   if (user?.role === "provider") {
     return <Navigate to="/provider/dashboard" replace />;
   }
+
   if (user?.role === "admin") {
     return <Navigate to="/admin/dashboard" replace />;
   }
+
   return <ServiceDirectoryRoute />;
 }
 
@@ -68,6 +73,7 @@ function RoleRoute({
       />
     );
   }
+
   if (user.role !== role) {
     const destination =
       user.role === "provider"
@@ -75,38 +81,74 @@ function RoleRoute({
         : user.role === "admin"
           ? "/admin/dashboard"
           : "/resident/dashboard";
+
     return <Navigate to={destination} replace />;
   }
+
   return children;
 }
 
 function ProviderProfileRoute() {
   const { user } = useAuth();
   const profileId = getProviderProfileRouteId(user);
+
   return profileId ? (
-    <Navigate to={`/provider/profile/${encodeURIComponent(profileId)}`} replace />
+    <Navigate
+      to={`/provider/profile/${encodeURIComponent(profileId)}`}
+      replace
+    />
   ) : (
     <ServiceDirectoryRoute />
   );
 }
 
-function App() {
+function ChangePasswordRoute() {
+  const { user } = useAuth();
+
+  if (!user) {
+    return <Navigate to="/login" replace />;
+  }
+
+  if (user.role === "admin") {
+    return <Navigate to="/admin/dashboard" replace />;
+  }
+
+  return <ChangePassword />;
+}
+
+function AppContent() {
+  const location = useLocation();
+
+  const hideNavigation = location.pathname === "/change-password";
+
   return (
-    <BrowserRouter>
-      <AppNavigation />
+    <>
+      {!hideNavigation && <AppNavigation />}
+
       <Routes>
         <Route path="/" element={<HomeRoute />} />
         <Route path="/about" element={<AboutPage />} />
-        <Route path="/services" element={<Navigate to="/#services" replace />} />
+        <Route
+          path="/services"
+          element={<Navigate to="/#services" replace />}
+        />
         <Route
           path="/services/providers/:providerId"
           element={<ServiceDirectoryRoute />}
         />
-        <Route path="/services/*" element={<Navigate to="/#services" replace />} />
+        <Route
+          path="/services/*"
+          element={<Navigate to="/#services" replace />}
+        />
 
         <Route path="/login" element={<Login />} />
         <Route path="/register" element={<Register />} />
         <Route path="/forgot-password" element={<ForgotPassword />} />
+        <Route
+          path="/change-password"
+          element={<ChangePasswordRoute />}
+        />
+
         <Route path="/resident/login" element={<ResidentLogin />} />
         <Route path="/resident/register" element={<ResidentRegister />} />
         <Route path="/provider/login" element={<ProviderLogin />} />
@@ -120,6 +162,7 @@ function App() {
             </RoleRoute>
           }
         />
+
         <Route
           path="/resident/profile"
           element={
@@ -128,6 +171,7 @@ function App() {
             </RoleRoute>
           }
         />
+
         <Route
           path="/resident/saved"
           element={
@@ -136,6 +180,7 @@ function App() {
             </RoleRoute>
           }
         />
+
         <Route
           path="/resident/messages"
           element={
@@ -144,6 +189,7 @@ function App() {
             </RoleRoute>
           }
         />
+
         <Route
           path="/resident/messages/:providerId"
           element={
@@ -152,6 +198,7 @@ function App() {
             </RoleRoute>
           }
         />
+
         <Route
           path="/conversation/:providerId"
           element={
@@ -169,6 +216,7 @@ function App() {
             </RoleRoute>
           }
         />
+
         <Route
           path="/provider/services/*"
           element={
@@ -177,6 +225,7 @@ function App() {
             </RoleRoute>
           }
         />
+
         <Route
           path="/provider/profile"
           element={
@@ -185,6 +234,7 @@ function App() {
             </RoleRoute>
           }
         />
+
         <Route
           path="/provider/profile/:providerId"
           element={
@@ -193,6 +243,7 @@ function App() {
             </RoleRoute>
           }
         />
+
         <Route
           path="/provider/messages"
           element={
@@ -201,6 +252,7 @@ function App() {
             </RoleRoute>
           }
         />
+
         <Route
           path="/provider/conversation/:residentId"
           element={
@@ -209,6 +261,7 @@ function App() {
             </RoleRoute>
           }
         />
+
         <Route
           path="/provider/reviews"
           element={
@@ -226,6 +279,7 @@ function App() {
             </RoleRoute>
           }
         />
+
         <Route
           path="/admin/dashboard"
           element={
@@ -234,8 +288,17 @@ function App() {
             </RoleRoute>
           }
         />
+
         <Route path="*" element={<Navigate to="/" replace />} />
       </Routes>
+    </>
+  );
+}
+
+function App() {
+  return (
+    <BrowserRouter>
+      <AppContent />
     </BrowserRouter>
   );
 }
