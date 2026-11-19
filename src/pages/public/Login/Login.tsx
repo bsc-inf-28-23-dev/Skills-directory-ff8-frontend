@@ -25,7 +25,7 @@ export default function Login() {
         </header>
 
         <div className="auth-heading">
-          <h2>Welcome back!</h2>
+          <h2>Please Login!</h2>
           <p>Sign in to your Skillz Directory account.</p>
         </div>
 
@@ -91,7 +91,7 @@ export default function Login() {
           )}
 
           <button className="auth-submit" type="submit">
-            Sign in
+            Click To Login
           </button>
         </form>
 

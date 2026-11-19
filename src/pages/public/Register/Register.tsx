@@ -173,12 +173,12 @@ export default function Register() {
           )}
 
           <button className="auth-submit" type="submit">
-            Create account
+            Click To Register
           </button>
         </form>
 
         <p className="auth-switch">
-          Already have an account? <Link to="/login">Sign in</Link>
+          Already have an account? <Link to="/login">Login</Link>
         </p>
       </section>
     </main>
