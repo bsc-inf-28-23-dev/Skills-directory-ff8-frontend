@@ -14,6 +14,7 @@ export const mockUsers: Record<"resident" | "provider", User> = {
   },
   provider: {
     id: "dev-provider-1",
+    providerProfileId: "rapid-flow",
     fullName: "Sam Banda",
     displayName: "Rapid Flow Plumbing",
     email: "provider@test.com",

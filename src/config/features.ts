@@ -8,7 +8,7 @@ export const FEATURES = {
   /** / (Find Services landing page) */
   searchPage: true,
   /** /messages (conversation list and chat) */
-  messaging: false,
+  messaging: true,
   /** /providers/:providerId (full provider profile page) */
-  providerProfilePage: false,
+  providerProfilePage: true,
 };

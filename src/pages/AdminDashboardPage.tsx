@@ -1,4 +1,5 @@
-import { useState } from "react";
+import { useEffect, useState } from "react";
+import { isAxiosError } from "axios";
 import { useNavigate } from "react-router-dom";
 import {
   ShieldAlert, Users, Store, Flag, LogOut, Plus
@@ -7,23 +8,9 @@ import Eyebrow from "../components/Eyebrow";
 import Modal from "../components/Modal";
 import { useAuth } from "../hooks/useAuth";
 import { formatDate } from "../utils/format";
-import type { User, UserRole, ProviderSummary } from "../types";
-
-function isUserRole(role: string): role is UserRole {
-  return role === "resident" || role === "provider" || role === "admin";
-}
-
-// --- MOCK DATA ---
-const INITIAL_USERS: User[] = [
-  { id: "u1", fullName: "John Banda", email: "john@test.com", role: "resident", createdAt: new Date().toISOString() },
-  { id: "u2", fullName: "Mary Phiri", email: "mary@test.com", role: "provider", createdAt: new Date(Date.now() - 86400000 * 5).toISOString() },
-  { id: "u3", fullName: "Admin Main", email: "admin@test.com", role: "admin", createdAt: new Date(Date.now() - 86400000 * 30).toISOString() },
-];
-
-const INITIAL_PROVIDERS: ProviderSummary[] = [
-  { id: "p1", name: "Bright Spark", category: "Electrical", serviceArea: "Lilongwe", description: "Certified electrician." },
-  { id: "p2", name: "Zomba Plumbing", category: "Plumbing", serviceArea: "Zomba", description: "Emergency repairs." },
-];
+import { adminService } from "../services/adminService";
+import type { AdminOverview } from "../services/adminService";
+import type { User, ProviderSummary, UserRole } from "../types";
 
 export default function AdminDashboardPage() {
   const { logout } = useAuth();
@@ -31,31 +18,93 @@ export default function AdminDashboardPage() {
 
   // State
   const [activeTab, setActiveTab] = useState<"overview" | "users" | "providers">("overview");
-  const [users, setUsers] = useState<User[]>(INITIAL_USERS);
-  const [providers, setProviders] = useState<ProviderSummary[]>(INITIAL_PROVIDERS);
+  const [stats, setStats] = useState<AdminOverview | null>(null);
+  const [users, setUsers] = useState<User[]>([]);
+  const [providers, setProviders] = useState<ProviderSummary[]>([]);
+  const [loading, setLoading] = useState(true);
+  const [error, setError] = useState<string | null>(null);
   
   // Modal State
   const [isRoleModalOpen, setIsRoleModalOpen] = useState(false);
   const [isAdminModalOpen, setIsAdminModalOpen] = useState(false);
   const [selectedUser, setSelectedUser] = useState<User | null>(null);
   const [newRole, setNewRole] = useState<UserRole>("resident");
-  
-  // Fake New Admin Form
   const [newAdminEmail, setNewAdminEmail] = useState("");
 
+  // Fetch Real Data
+  useEffect(() => {
+    async function loadData() {
+      try {
+        setLoading(true);
+        setError(null);
+        const [overviewData, usersData, providersData] = await Promise.all([
+          adminService.getOverview(),
+          adminService.getAllUsers(),
+          adminService.getPendingProviders()
+        ]);
+        setStats(overviewData);
+        setUsers(usersData);
+        setProviders(providersData);
+      } catch (loadError: unknown) {
+        if (
+          isAxiosError(loadError) &&
+          (loadError.response?.status === 401 || loadError.response?.status === 403)
+        ) {
+          setError("You are not authorized to view administrator data.");
+        } else {
+          console.error("Could not load administrator data.", loadError);
+          setError(
+            loadError instanceof Error
+              ? loadError.message
+              : "Failed to load admin data.",
+          );
+        }
+      } finally {
+        setLoading(false);
+      }
+    }
+    loadData();
+  }, []);
+
   const onLogout = async () => {
-    await logout();
-    navigate("/login", { replace: true });
+    let logoutError = "";
+    try {
+      await logout();
+    } catch (error) {
+      console.error("Could not sign out on the server.", error);
+      logoutError = "We could not confirm sign-out with the server.";
+    } finally {
+      navigate("/login", {
+        replace: true,
+        state: logoutError ? { logoutError } : undefined,
+      });
+    }
   };
 
   // --- HANDLERS ---
-  const handleProviderAction = (id: string) => {
-    setProviders(prev => prev.filter(p => p.id !== id));
+  const handleProviderAction = async (id: string, action: "approve" | "reject") => {
+    try {
+      if (action === "approve") {
+        await adminService.approveProviderListing(id);
+      } else {
+        await adminService.rejectProviderListing(id);
+      }
+      setProviders(prev => prev.filter(p => p.id !== id));
+    } catch (error) {
+      console.error(`Could not ${action} provider listing.`, error);
+      alert(`Failed to ${action} provider.`);
+    }
   };
 
-  const handleBanUser = () => {
+  const handleBanUser = async (id: string) => {
     if (!window.confirm("Ban this user?")) return;
-    alert("User banned.");
+    try {
+      await adminService.updateUserStatus(id, "ban");
+      alert("User banned.");
+    } catch (error) {
+      console.error("Could not ban user.", error);
+      alert("Failed to ban user.");
+    }
   };
 
   const openRoleModal = (user: User) => {
@@ -64,27 +113,35 @@ export default function AdminDashboardPage() {
     setIsRoleModalOpen(true);
   };
 
-  const submitRoleChange = () => {
+  const submitRoleChange = async () => {
     if (!selectedUser) return;
-    setUsers(prev => prev.map(u => u.id === selectedUser.id ? { ...u, role: newRole } : u));
-    setIsRoleModalOpen(false);
+    try {
+      await adminService.changeUserRole(selectedUser.id, newRole);
+      setUsers(prev => prev.map(u => u.id === selectedUser.id ? { ...u, role: newRole } : u));
+      setIsRoleModalOpen(false);
+    } catch (error) {
+      console.error("Could not change user role.", error);
+      alert("Failed to change role.");
+    }
   };
 
-  const submitNewAdmin = () => {
+  const submitNewAdmin = async () => {
     if (!newAdminEmail) return;
-    const newUser: User = {
-      id: `u${Date.now()}`,
-      fullName: "New Admin",
-      email: newAdminEmail,
-      role: "admin",
-      createdAt: new Date().toISOString()
-    };
-    setUsers([newUser, ...users]);
-    setIsAdminModalOpen(false);
-    setNewAdminEmail("");
+    try {
+      // Note: If the backend requires a password to create an admin, you must add it here.
+      const newUser = await adminService.createAdmin({ fullName: "New Admin", email: newAdminEmail });
+      setUsers([newUser, ...users]);
+      setIsAdminModalOpen(false);
+      setNewAdminEmail("");
+    } catch (error) {
+      console.error("Could not create administrator.", error);
+      alert("Failed to create admin.");
+    }
   };
 
-  // --- RENDER TABS ---
+  if (loading) return <div className="p-5 text-center text-muted-ink">Loading Admin Data...</div>;
+  if (error) return <div className="p-5 text-center text-danger">{error}</div>;
+
   return (
     <div className="container-fluid py-5 px-4 px-md-5" style={{ width: "100%", maxWidth: 1400, margin: 0, textAlign: "left" }}>
       
@@ -110,13 +167,13 @@ export default function AdminDashboardPage() {
       </div>
 
       {/* TAB: OVERVIEW */}
-      {activeTab === "overview" && (
+      {activeTab === "overview" && stats && (
         <div className="row g-4">
           <div className="col-12 col-md-6 col-xl-3">
             <div className="surface-box p-4 d-flex align-items-center gap-3">
               <div className="p-3 rounded-circle text-white" style={{ background: "var(--primary)" }}><Users size={24} /></div>
               <div>
-                <div className="stat-card-number">{users.length}</div>
+                <div className="stat-card-number">{stats.totalUsers || 0}</div>
                 <div className="stat-card-label">Total Users</div>
               </div>
             </div>
@@ -125,7 +182,7 @@ export default function AdminDashboardPage() {
             <div className="surface-box p-4 d-flex align-items-center gap-3">
               <div className="p-3 rounded-circle text-white" style={{ background: "var(--ink)" }}><Store size={24} /></div>
               <div>
-                <div className="stat-card-number">{providers.length}</div>
+                <div className="stat-card-number">{stats.totalProviders || 0}</div>
                 <div className="stat-card-label">Active Providers</div>
               </div>
             </div>
@@ -134,7 +191,7 @@ export default function AdminDashboardPage() {
             <div className="surface-box p-4 d-flex align-items-center gap-3">
               <div className="p-3 rounded-circle text-white" style={{ background: "var(--primary)" }}><ShieldAlert size={24} /></div>
               <div>
-                <div className="stat-card-number">{providers.length}</div>
+                <div className="stat-card-number">{stats.pendingListings || 0}</div>
                 <div className="stat-card-label">Pending Listings</div>
               </div>
             </div>
@@ -143,7 +200,7 @@ export default function AdminDashboardPage() {
             <div className="surface-box p-4 d-flex align-items-center gap-3">
               <div className="p-3 rounded-circle text-white" style={{ background: "var(--destructive)" }}><Flag size={24} /></div>
               <div>
-                <div className="stat-card-number">0</div>
+                <div className="stat-card-number">{stats.reportedUsers || 0}</div>
                 <div className="stat-card-label">Reported Users</div>
               </div>
             </div>
@@ -175,13 +232,16 @@ export default function AdminDashboardPage() {
                     Change Role
                   </button>
                   {u.role !== "admin" && (
-                    <button onClick={handleBanUser} className="btn btn-sm btn-outline-danger">
+                    <button onClick={() => handleBanUser(u.id)} className="btn btn-sm btn-outline-danger">
                       Ban
                     </button>
                   )}
                 </div>
               </li>
             ))}
+            {users.length === 0 && (
+              <li className="text-center py-4 text-muted-ink">No users found.</li>
+            )}
           </ul>
         </div>
       )}
@@ -211,8 +271,8 @@ export default function AdminDashboardPage() {
                     <td>{prov.serviceArea}</td>
                     <td className="text-end">
                       <div className="d-flex justify-content-end gap-2">
-                        <button onClick={() => handleProviderAction(prov.id)} className="btn btn-sm btn-outline-success">Approve</button>
-                        <button onClick={() => handleProviderAction(prov.id)} className="btn btn-sm btn-outline-danger">Reject</button>
+                        <button onClick={() => handleProviderAction(prov.id, "approve")} className="btn btn-sm btn-outline-success">Approve</button>
+                        <button onClick={() => handleProviderAction(prov.id, "reject")} className="btn btn-sm btn-outline-danger">Reject</button>
                       </div>
                     </td>
                   </tr>
@@ -226,15 +286,12 @@ export default function AdminDashboardPage() {
         </div>
       )}
 
-      {/* Sign Out Section at the bottom */}
+      {/* Sign Out Section */}
       <section className="surface-box p-4 mt-5 mb-4" style={{ maxWidth: 500 }}>
         <h3 className="section-label">Admin Account</h3>
-        <p className="text-muted-ink small mb-3">
-          Signed in as an Administrator.
-        </p>
         <button
           type="button"
-          className="btn btn-danger-outline d-flex align-items-center gap-2"
+          className="btn btn-danger-outline d-flex align-items-center gap-2 mt-3"
           onClick={onLogout}
         >
           <LogOut size={16} /> Sign out
@@ -248,7 +305,10 @@ export default function AdminDashboardPage() {
           className="form-select mb-4"
           value={newRole}
           onChange={(event) => {
-            if (isUserRole(event.target.value)) setNewRole(event.target.value);
+            const value = event.currentTarget.value;
+            if (value === "resident" || value === "provider" || value === "admin") {
+              setNewRole(value);
+            }
           }}
         >
           <option value="resident">Resident</option>

@@ -5,15 +5,26 @@ import { Link, useLocation, useNavigate } from 'react-router-dom';
 import './AuthForm.css';
 import { useAuth } from '../../hooks/useAuth';
 import { loginUser, registerUser } from '../../services/authService';
+import { USE_DEV_FIXTURES } from '../../config/env';
+import { mockUserCredentials, mockUsers } from '../../data/mockUsers';
+import type { User } from '../../types';
 
 type AuthFormProps = {
-  role: 'resident' | 'provider';
+  role?: 'resident' | 'provider';
   mode: 'login' | 'register';
 };
 
 export default function AuthForm({ role, mode }: AuthFormProps) {
   const isRegister = mode === 'register';
-  const roleName = role === 'resident' ? 'Resident' : 'Service Provider';
+  const roleName =
+    role === 'resident' ? 'Resident' : role === 'provider' ? 'Service Provider' : 'Account';
+  const switchPath = isRegister
+    ? role
+      ? `/${role}/login`
+      : '/login'
+    : role
+      ? `/${role}/register`
+      : '/register';
   const navigate = useNavigate();
   const location = useLocation();
   const { setUser } = useAuth();
@@ -21,6 +32,28 @@ export default function AuthForm({ role, mode }: AuthFormProps) {
   const [showPassword, setShowPassword] = useState(false);
   const [error, setError] = useState('');
   const [message, setMessage] = useState('');
+
+  function finishSignIn(user: User, accessToken?: string) {
+    setUser(user, accessToken);
+
+    const returnTo = (location.state as { from?: unknown } | null)?.from;
+    if (typeof returnTo === 'string' && returnTo.startsWith('/')) {
+      navigate(returnTo, { replace: true });
+      return;
+    }
+
+    const destination =
+      user.role === 'provider'
+        ? '/provider/dashboard'
+        : user.role === 'admin'
+          ? '/admin/dashboard'
+          : '/resident/dashboard';
+    navigate(destination, { replace: true });
+  }
+
+  function loginAsDemo(account: 'resident' | 'provider') {
+    finishSignIn(mockUsers[account]);
+  }
 
   async function handleSubmit(event: FormEvent<HTMLFormElement>) {
     event.preventDefault();
@@ -41,6 +74,10 @@ export default function AuthForm({ role, mode }: AuthFormProps) {
 
     try {
       if (isRegister) {
+        if (!role) {
+          setError('Choose an account type before registering.');
+          return;
+        }
         await registerUser({ fullName, phone, email, password, role });
         setMessage('Successfully registered! You may log in.');
         setTimeout(() => {
@@ -51,24 +88,23 @@ export default function AuthForm({ role, mode }: AuthFormProps) {
         return;
       }
 
-      const { user, accessToken, token } = await loginUser({
-        email,
-        password,
-        role,
-      });
-      setUser(user, accessToken ?? token);
-
-      const returnTo = (location.state as { from?: unknown } | null)?.from;
-      if (typeof returnTo === 'string' && returnTo.startsWith('/')) {
-        navigate(returnTo, { replace: true });
-        return;
+      if (USE_DEV_FIXTURES) {
+        const demoAccount =
+          email === mockUserCredentials.resident.email &&
+          password === mockUserCredentials.resident.password
+            ? 'resident'
+            : email === mockUserCredentials.provider.email &&
+                password === mockUserCredentials.provider.password
+              ? 'provider'
+              : null;
+        if (demoAccount) {
+          loginAsDemo(demoAccount);
+          return;
+        }
       }
 
-      if (user.role === 'resident') {
-        navigate('/', { replace: true });
-      } else {
-        navigate('/provider/messages', { replace: true });
-      }
+      const { user, accessToken, token } = await loginUser({ email, password });
+      finishSignIn(user, accessToken ?? token);
     } catch (requestError: unknown) {
       const responseMessage = axios.isAxiosError<{ message?: string }>(requestError)
         ? requestError.response?.data?.message
@@ -96,7 +132,7 @@ export default function AuthForm({ role, mode }: AuthFormProps) {
           <p>
             {isRegister
               ? `Register as a ${roleName.toLowerCase()}.`
-              : `Sign in to your ${roleName.toLowerCase()} account.`}
+              : `Sign in to your ${roleName.toLowerCase()}.`}
           </p>
         </div>
 
@@ -182,6 +218,26 @@ export default function AuthForm({ role, mode }: AuthFormProps) {
             </div>
           )}
 
+          {!isRegister && USE_DEV_FIXTURES && (
+            <div className="auth-demo">
+              <p>Development test accounts</p>
+              <button
+                type="button"
+                className="auth-demo__button"
+                onClick={() => loginAsDemo('resident')}
+              >
+                Continue as demo resident
+              </button>
+              <button
+                type="button"
+                className="auth-demo__button"
+                onClick={() => loginAsDemo('provider')}
+              >
+                Continue as demo provider
+              </button>
+            </div>
+          )}
+
           {error && (
             <p className="auth-error" role="alert">
               {error}
@@ -204,14 +260,16 @@ export default function AuthForm({ role, mode }: AuthFormProps) {
             ? 'Already have an account?'
             : "Don't have an account?"}{' '}
 
-          <Link to={isRegister ? `/${role}/login` : `/${role}/register`}>
+          <Link to={switchPath}>
             {isRegister ? 'Sign in' : 'Create account'}
           </Link>
         </p>
 
-        <p className="auth-role-note">
-          Account type: <strong>{roleName}</strong>
-        </p>
+        {role && (
+          <p className="auth-role-note">
+            Account type: <strong>{roleName}</strong>
+          </p>
+        )}
       </section>
     </main>
   );

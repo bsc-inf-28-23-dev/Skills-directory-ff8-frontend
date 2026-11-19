@@ -27,9 +27,7 @@ export default function AboutSection() {
 
       <div className="directory-about__content">
         <p className="directory-about__eyebrow">ABOUT US</p>
-        <h2 id="about-heading">
-          How Skillz Directory helps.
-        </h2>
+        <h2 id="about-heading">How Skillz Directory helps.</h2>
         <p>
           Skillz Directory connects residents with local service providers.
           Visitors can explore services, while registered residents can contact

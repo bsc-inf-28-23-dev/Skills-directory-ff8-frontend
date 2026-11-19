@@ -13,6 +13,7 @@ interface Props {
   otherPartyName: string;
   messages: Message[];
   onSend: (text: string) => void;
+  isConnected?: boolean;
 }
 
 export const ChatWindow: React.FC<Props> = ({
@@ -21,6 +22,7 @@ export const ChatWindow: React.FC<Props> = ({
   otherPartyName,
   messages,
   onSend,
+  isConnected = false,
 }) => {
   const bottomRef = useRef<HTMLDivElement | null>(null);
   const navigate = useNavigate();
@@ -33,6 +35,8 @@ export const ChatWindow: React.FC<Props> = ({
   const handleBack = () => {
     if (pathname.startsWith('/provider')) {
       navigate('/provider/messages');
+    } else if (pathname.startsWith('/resident') || pathname.startsWith('/conversation')) {
+      navigate('/resident/messages');
     } else {
       navigate('/');
     }
@@ -47,6 +51,13 @@ export const ChatWindow: React.FC<Props> = ({
 
         <div className="chat-header-center">
           <div className="chat-provider-name">{otherPartyName}</div>
+          <small
+            className="chat-status"
+            style={{ color: isConnected ? '#28a745' : '#6b6375' }}
+            role="status"
+          >
+            {isConnected ? '● Connected' : '○ Offline'}
+          </small>
         </div>
 
         <div className="chat-header-spacer" />

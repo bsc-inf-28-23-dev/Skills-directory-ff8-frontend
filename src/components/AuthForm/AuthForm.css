@@ -73,7 +73,8 @@
   font-weight: 600;
 }
 
-.auth-card input:not([type='checkbox']) {
+.auth-card input:not([type='checkbox']),
+.auth-card select {
   box-sizing: border-box;
   width: 100%;
   min-width: 0;
@@ -87,6 +88,11 @@
 }
 
 .auth-card input:focus {
+  border-color: #087e8b;
+  box-shadow: 0 0 0 3px rgba(8, 126, 139, 0.12);
+}
+
+.auth-card select:focus {
   border-color: #087e8b;
   box-shadow: 0 0 0 3px rgba(8, 126, 139, 0.12);
 }
@@ -180,6 +186,42 @@
   color: #68758a;
   text-align: center;
   font-size: 14px;
+}
+
+.auth-demo {
+  display: grid;
+  gap: 8px;
+  margin-top: 20px;
+  padding-top: 16px;
+  border-top: 1px solid #edf0f5;
+}
+
+.auth-demo p {
+  margin: 0;
+  color: #68758a;
+  font-size: 12px;
+  text-align: center;
+}
+
+.auth-demo__button {
+  min-height: 40px;
+  border: 1px solid #d7dfeb;
+  border-radius: 8px;
+  background: #fff;
+  color: #26364e;
+  cursor: pointer;
+  font-size: 13px;
+  font-weight: 600;
+}
+
+.auth-demo__button:hover:not(:disabled) {
+  border-color: #087e8b;
+  color: #087e8b;
+}
+
+.auth-demo__button:disabled {
+  cursor: wait;
+  opacity: 0.6;
 }
 
 .auth-role-note {

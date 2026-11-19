@@ -1,5 +1,5 @@
 import api from "./api";
-import type { User, ProviderSummary } from "../types";
+import type { User, ProviderSummary, UserRole } from "../types";
 
 export interface AdminOverview {
   totalUsers: number;
@@ -9,32 +9,40 @@ export interface AdminOverview {
 }
 
 export const adminService = {
-  getOverview: async (): Promise<AdminOverview> => {
-    const { data } = await api.get<AdminOverview>("/admin/overview");
-    return data;
-  },
-  
-  getPendingProviders: async (): Promise<ProviderSummary[]> => {
-    // Assuming GET /admin/providers returns a list
-    const { data } = await api.get<ProviderSummary[]>("/admin/providers"); 
+  async getOverview(): Promise<AdminOverview> {
+    const { data } = await api.get<AdminOverview>("/admin/dashboard");
     return data;
   },
 
-  getAllUsers: async (): Promise<User[]> => {
-    // Assuming GET /admin/users returns a list
+  async getAllUsers(): Promise<User[]> {
     const { data } = await api.get<User[]>("/admin/users");
     return data;
   },
 
-  manageProviderAction: async (id: string, action: "approve" | "reject" | "delete") => {
-    await api.patch(`/admin/providers/${id}/action`, { action });
+  async getPendingProviders(): Promise<ProviderSummary[]> {
+    const { data } = await api.get<ProviderSummary[]>("/admin/providers/pending");
+    return data;
   },
 
-  updateUserStatus: async (id: string, status: "active" | "suspended" | "banned") => {
-    await api.patch(`/admin/users/${id}/status`, { status });
+  async updateUserStatus(id: string, action: "suspend" | "ban"): Promise<void> {
+    await api.patch(`/admin/users/${id}/${action}`);
   },
 
-  changeUserRole: async (id: string, role: "resident" | "provider" | "admin") => {
+  async approveProviderListing(id: string): Promise<void> {
+    await api.patch(`/admin/providers/${id}/approve`);
+  },
+
+  async rejectProviderListing(id: string): Promise<void> {
+    await api.patch(`/admin/providers/${id}/reject`);
+  },
+
+  async changeUserRole(id: string, role: UserRole): Promise<void> {
     await api.patch(`/admin/users/${id}/role`, { role });
+  },
+
+  // NEW: Required by AdminDashboardPage.tsx
+  async createAdmin(payload: { fullName: string; email: string; password?: string }): Promise<User> {
+    const { data } = await api.post<User>("/admin/admins", payload);
+    return data;
   },
 };

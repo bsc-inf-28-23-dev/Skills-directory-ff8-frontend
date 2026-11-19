@@ -1,102 +1,278 @@
+import { useEffect, useState } from "react";
+import type { FormEvent } from "react";
 import { Link, useNavigate } from "react-router-dom";
-import { ArrowRight, ArrowUpRight, LogOut } from "lucide-react";
+import {
+  ArrowRight,
+  Bookmark,
+  MessageCircle,
+  Search,
+  UserRound,
+} from "lucide-react";
+import ErrorAlert from "../components/ErrorAlert";
 import Eyebrow from "../components/Eyebrow";
-import StatCard from "../components/StatCard";
-import FeatureLink from "../components/FeatureLink";
-import { FEATURES } from "../config/features";
-import { useAuth } from "../hooks/useAuth";
 import RecentConversations from "../features/resident/RecentConversations";
 import RecentProviders from "../features/resident/RecentProviders";
+import { useAuth } from "../hooks/useAuth";
+import { useSavedServices } from "../hooks/useSavedServices";
+import { getProviders } from "../services/providerService";
+import {
+  getRecentlyViewedProviders,
+  getRecentConversations,
+} from "../services/residentService";
+import type { ServiceProvider } from "../types/serviceProvider";
+import "./ResidentDashboardPage.css";
+
+interface DashboardStats {
+  providersViewed: number | null;
+  conversations: number | null;
+}
 
 export default function ResidentDashboardPage() {
-  const { user, logout } = useAuth();
+  const { user } = useAuth();
   const navigate = useNavigate();
+  const [serviceSearch, setServiceSearch] = useState("");
+  const [stats, setStats] = useState<DashboardStats>({
+    providersViewed: null,
+    conversations: null,
+  });
+  const [statsLoading, setStatsLoading] = useState(true);
+  const [statsError, setStatsError] = useState("");
+  const [providers, setProviders] = useState<ServiceProvider[]>([]);
+  const [providersError, setProvidersError] = useState("");
+  const { savedServices, error: savedServicesError } = useSavedServices(user?.id);
 
-  if (!user) return null;
+  useEffect(() => {
+    let active = true;
+    getProviders()
+      .then((data) => {
+        if (active) setProviders(data);
+      })
+      .catch((error: unknown) => {
+        console.error("Could not load service providers for saved services.", error);
+        if (active) {
+          setProvidersError("Provider information could not be loaded.");
+        }
+      });
 
-  const firstName = "Resident"; // Forces correct spelling
+    return () => {
+      active = false;
+    };
+  }, []);
 
-  const onLogout = async () => {
-    await logout();
-    navigate("/login", { replace: true });
-  };
+  useEffect(() => {
+    let active = true;
+
+    async function loadStats() {
+      setStatsLoading(true);
+      setStatsError("");
+      const [providersResult, conversationsResult] = await Promise.allSettled([
+        getRecentlyViewedProviders(),
+        getRecentConversations(5),
+      ]);
+
+      if (!active) return;
+      if (providersResult.status === "fulfilled") {
+        setStats((current) => ({
+          ...current,
+          providersViewed: providersResult.value.length,
+        }));
+      } else {
+        console.error("Could not load recently viewed provider statistics.", providersResult.reason);
+      }
+
+      if (conversationsResult.status === "fulfilled") {
+        setStats((current) => ({
+          ...current,
+          conversations: conversationsResult.value.length,
+        }));
+      } else {
+        console.error("Could not load conversation statistics.", conversationsResult.reason);
+      }
+
+      if (
+        providersResult.status === "rejected" ||
+        conversationsResult.status === "rejected"
+      ) {
+        setStatsError("Some dashboard statistics could not be loaded.");
+      }
+      setStatsLoading(false);
+    }
+
+    void loadStats();
+    return () => {
+      active = false;
+    };
+  }, []);
+
+  const firstName = user?.fullName.trim().split(/\s+/)[0] || "there";
+  const hasProfile = Boolean(
+    user?.bio ||
+      user?.avatarUrl ||
+      user?.location ||
+      user?.occupation ||
+      user?.languages?.length,
+  );
+  const visibleSavedServices = savedServices.slice(0, 3);
+
+  function handleSearch(event: FormEvent<HTMLFormElement>) {
+    event.preventDefault();
+    const query = serviceSearch.trim();
+    navigate(query ? `/?q=${encodeURIComponent(query)}#services` : "/#services");
+  }
 
   return (
-    <div className="container-fluid py-5 px-4 px-md-5" style={{ width: "100%", maxWidth: 1200, marginLeft: 0, marginRight: "auto", textAlign: "left" }}>
-      
-      {/* Header with Two-Tone Color */}
-      <header className="mb-5">
-        <Eyebrow>Local skills. Real connections.</Eyebrow>
-        <h1 className="display-heading display-heading-xl mb-3" style={{ lineHeight: 1.1 }}>
-          Welcome back, <span className="text-primary">{firstName}.</span>
-        </h1>
-        <p className="text-muted-ink" style={{ maxWidth: 512, fontSize: 18 }}>
-          Your community is right where you left it.
-        </p>
-      </header>
-
-      {/* Stat Cards */}
-      <div className="row g-3 mb-5">
-        <div className="col-12 col-md-4">
-          <StatCard value="—" label="Providers viewed" />
+    <main className="page-container resident-home">
+      <section className="resident-home__hero">
+        <div className="resident-home__welcome">
+          <Eyebrow>Your local service community</Eyebrow>
+          <h1 className="display-heading display-heading-lg">
+            Welcome back, <span className="text-primary">{firstName}.</span>
+          </h1>
+          <p>Find a trusted local professional or pick up where you left off.</p>
         </div>
-        <div className="col-12 col-md-4">
-          <StatCard value="—" label="Reviews written" />
-        </div>
-        <div className="col-12 col-md-4">
-          <StatCard value="—" label="Conversations" />
-        </div>
-      </div>
+        <form className="resident-home__search" onSubmit={handleSearch} role="search">
+          <Search size={20} aria-hidden="true" />
+          <input
+            type="search"
+            value={serviceSearch}
+            onChange={(event) => setServiceSearch(event.target.value)}
+            placeholder="What service do you need?"
+            aria-label="Search services"
+          />
+          <button type="submit" className="btn btn-athletic">
+            Find services
+          </button>
+        </form>
+      </section>
 
-      {/* Main Content */}
-      <div className="row g-4 g-lg-5 mb-5">
-        <div className="col-12 col-lg-7">
-          <section aria-labelledby="recent-providers-heading">
-            <h2 id="recent-providers-heading" className="section-label">
-              Recently viewed providers
-            </h2>
-            <RecentProviders />
-          </section>
-        </div>
+      {!hasProfile && (
+        <section className="resident-home__profile-prompt" aria-label="Complete your profile">
+          <div>
+            <p className="eyebrow mb-2">A better introduction</p>
+            <h2 className="display-heading display-heading-md">Complete your profile</h2>
+            <p>
+              Add a photo and a few details so providers know who they are speaking with.
+            </p>
+          </div>
+          <Link to="/resident/profile" className="btn btn-trade">
+            Set up profile <UserRound size={16} aria-hidden="true" />
+          </Link>
+        </section>
+      )}
 
-        <div className="col-12 col-lg-5">
-          <section aria-labelledby="recent-conversations-heading">
-            <h2 id="recent-conversations-heading" className="section-label">
-              Recent conversations
-            </h2>
-            <RecentConversations />
-          </section>
+      <section className="resident-home__stats" aria-label="Account activity">
+        <StatCard
+          label="Providers viewed"
+          value={statsLoading ? "—" : stats.providersViewed?.toString() ?? "—"}
+        />
+        <StatCard
+          label="Recent conversations"
+          value={statsLoading ? "—" : stats.conversations?.toString() ?? "—"}
+        />
+        <StatCard label="Reviews written" value="—" description="Not available yet" />
+        {statsError && <p className="resident-home__stats-error" role="status">{statsError}</p>}
+      </section>
 
-          <div className="mt-4 d-flex flex-wrap gap-2">
-            <FeatureLink
-              to="/#services"
-              enabled={FEATURES.searchPage}
-              className="btn btn-athletic"
-            >
-              Find a pro <ArrowRight />
-            </FeatureLink>
-            <Link to="/resident/profile" className="btn btn-trade">
-              My profile <ArrowUpRight />
+      <div className="resident-home__activity-grid">
+        <section
+          className="resident-home__section resident-home__recent"
+          aria-labelledby="recent-providers-heading"
+        >
+          <div className="resident-home__section-heading">
+            <div>
+              <p className="eyebrow mb-1">Pick up where you left off</p>
+              <h2 id="recent-providers-heading">Recently viewed providers</h2>
+            </div>
+            <Link to="/#services" aria-label="Explore all services">
+              Explore <ArrowRight size={15} aria-hidden="true" />
             </Link>
           </div>
+          <RecentProviders />
+        </section>
+
+        <div className="resident-home__side-column">
+          <section
+            className="resident-home__section resident-home__saved"
+            aria-labelledby="saved-services-heading"
+          >
+            <div className="resident-home__section-heading">
+              <div>
+                <p className="eyebrow mb-1">Your shortlist</p>
+                <h2 id="saved-services-heading">Saved services</h2>
+              </div>
+              <Link to="/resident/saved">
+                View all <ArrowRight size={15} aria-hidden="true" />
+              </Link>
+            </div>
+
+            {savedServicesError && <ErrorAlert message={savedServicesError} />}
+            {providersError && <ErrorAlert message={providersError} />}
+            {visibleSavedServices.length > 0 ? (
+              <ul className="resident-home__saved-list">
+                {visibleSavedServices.map((saved) => {
+                  const provider = providers.find((item) => item.id === saved.providerId);
+                  return (
+                    <li key={`${saved.providerId}-${saved.service}`}>
+                      <Link
+                        to={`/services/providers/${saved.providerId}?service=${encodeURIComponent(saved.service)}`}
+                      >
+                        <span className="resident-home__saved-icon">
+                          <Bookmark size={16} aria-hidden="true" />
+                        </span>
+                        <span className="resident-home__saved-copy">
+                          <strong>{saved.service}</strong>
+                          <small>{provider?.name ?? "Service provider"}</small>
+                        </span>
+                        <ArrowRight size={16} aria-hidden="true" />
+                      </Link>
+                    </li>
+                  );
+                })}
+              </ul>
+            ) : (
+              <div className="resident-home__empty">
+                <Bookmark size={21} aria-hidden="true" />
+                <p>Save services you want to compare or revisit.</p>
+                <Link to="/#services">Explore services</Link>
+              </div>
+            )}
+          </section>
+
+          <section
+            className="resident-home__section resident-home__messages"
+            aria-labelledby="recent-conversations-heading"
+          >
+            <div className="resident-home__section-heading">
+              <div>
+                <p className="eyebrow mb-1">Stay in touch</p>
+                <h2 id="recent-conversations-heading">Recent messages</h2>
+              </div>
+              <Link to="/resident/messages" aria-label="View all messages">
+                <MessageCircle size={17} aria-hidden="true" />
+              </Link>
+            </div>
+            <RecentConversations />
+          </section>
         </div>
       </div>
+    </main>
+  );
+}
 
-      {/* Account / Logout Section at the bottom left */}
-      <section className="surface-box p-4 mt-5 mb-4" style={{ maxWidth: 500 }}>
-        <h3 className="section-label">Account</h3>
-        <p className="text-muted-ink small mb-3">
-          Signed in as <strong>{user.email}</strong>.
-        </p>
-        <button
-          type="button"
-          className="btn btn-danger-outline d-flex align-items-center gap-2"
-          onClick={onLogout}
-        >
-          <LogOut size={16} /> Log out
-        </button>
-      </section>
-      
-    </div>
+function StatCard({
+  label,
+  value,
+  description,
+}: {
+  label: string;
+  value: string;
+  description?: string;
+}) {
+  return (
+    <article className="resident-home__stat">
+      <span>{label}</span>
+      <strong>{value}</strong>
+      {description && <small>{description}</small>}
+    </article>
   );
 }

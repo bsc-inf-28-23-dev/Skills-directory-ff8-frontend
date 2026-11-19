@@ -1,5 +1,6 @@
 import { useCallback, useSyncExternalStore } from "react";
 import type { User } from "../types";
+import { USE_DEV_FIXTURES } from "../config/env";
 
 interface AuthState {
   user: User | null;
@@ -15,10 +16,11 @@ function readStoredUser(): User | null {
 
     const savedUser = JSON.parse(raw) as User;
     if (
-      savedUser.id.startsWith("dev-") ||
-      savedUser.email === "resident@test.com" ||
-      savedUser.email === "provider@test.com" ||
-      savedUser.email.endsWith("@example.invalid")
+      !USE_DEV_FIXTURES &&
+      (savedUser.id.startsWith("dev-") ||
+        savedUser.email === "resident@test.com" ||
+        savedUser.email === "provider@test.com" ||
+        savedUser.email.endsWith("@example.invalid"))
     ) {
       localStorage.removeItem("user");
       localStorage.removeItem("accessToken");

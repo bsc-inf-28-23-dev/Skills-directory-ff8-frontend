@@ -5,7 +5,7 @@ import type { User, UserRole } from '../types';
 export interface LoginData {
   email: string;
   password: string;
-  role: UserRole;
+  role?: UserRole;
 }
 
 export interface AuthResponse {
@@ -14,9 +14,10 @@ export interface AuthResponse {
   token?: string;
 }
 
-export interface RegisterData extends LoginData {
+export interface RegisterData extends Omit<LoginData, "role"> {
   fullName: string;
   phone: string;
+  role: UserRole;
 }
 
 export async function loginUser(data: LoginData): Promise<AuthResponse> {

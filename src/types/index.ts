@@ -2,6 +2,7 @@ export type UserRole = "resident" | "provider" | "admin";
 
 export interface User {
   id: string;
+  providerProfileId?: string;
   fullName: string;
   displayName?: string | null;
   email: string;

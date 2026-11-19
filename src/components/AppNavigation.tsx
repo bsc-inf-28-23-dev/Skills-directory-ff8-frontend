@@ -1,13 +1,28 @@
-import { useState } from "react";
-import { LogOut } from "lucide-react";
+import { useEffect, useState } from "react";
+import type { LucideIcon } from "lucide-react";
+import {
+  Bell,
+  Bookmark,
+  BriefcaseBusiness,
+  Home,
+  Info,
+  LogOut,
+  MessageCircle,
+  Search,
+  UserRound,
+} from "lucide-react";
 import { Link, NavLink, useLocation, useNavigate } from "react-router-dom";
+import { getProviderProfileRouteId } from "../data/providerAccount";
 import { useAuth } from "../hooks/useAuth";
+import { getConversations } from "../services/chatService";
 import "./AppNavigation.css";
 
 interface NavigationLink {
   label: string;
   to: string;
   end?: boolean;
+  icon: LucideIcon;
+  active?: boolean;
 }
 
 export default function AppNavigation() {
@@ -15,73 +30,116 @@ export default function AppNavigation() {
   const navigate = useNavigate();
   const { user, logout } = useAuth();
   const [menuOpen, setMenuOpen] = useState(false);
-
-  const handleHomeClick = () => {
-    setMenuOpen(false);
-    window.scrollTo({ top: 0, behavior: "smooth" });
-  };
-  const handleLogout = () => {
-    setMenuOpen(false);
-    logout();
-    navigate("/provider/login", { replace: true });
-  };
+  const [unreadCount, setUnreadCount] = useState<number | null>(null);
 
   const isAuthPage = /\/(login|register|forgot-password)$/.test(pathname);
-  const isCompactPage =
-    isAuthPage ||
+  const profileId = getProviderProfileRouteId(user);
+  const messagesActive =
+    pathname.startsWith("/resident/messages") ||
+    pathname.startsWith("/provider/messages") ||
     pathname.startsWith("/conversation/") ||
     pathname.startsWith("/provider/conversation/");
 
-  const isProviderArea =
-    !isCompactPage &&
-    (pathname.startsWith("/provider/") ||
-      pathname.startsWith("/services/providers/"));
+  useEffect(() => {
+    let active = true;
+    async function loadUnreadCount() {
+      try {
+        const conversations = await getConversations();
+        const total = conversations.reduce(
+          (count, conversation) => count + (conversation.unreadCount || 0),
+          0,
+        );
+        if (active) setUnreadCount(total);
+      } catch (error) {
+        console.error("Could not load unread message count.", error);
+        if (active) setUnreadCount(null);
+      }
+    }
 
-  const isResidentArea =
-    !isCompactPage &&
-    (pathname.startsWith("/resident/") ||
-      pathname.startsWith("/conversation/") ||
-      pathname.startsWith("/reviews/"));
+    if (user && !isAuthPage) void loadUnreadCount();
+    return () => {
+      active = false;
+    };
+  }, [isAuthPage, user]);
 
-  const profilePath = pathname.startsWith("/services/providers/")
-    ? pathname
-    : "/services";
-  
-  const accountProfilePath =
-    user?.role === "resident" ? "/resident/profile" : profilePath;
+  if (isAuthPage) return null;
+  const visibleUnreadCount = user ? unreadCount : null;
 
-  const links: NavigationLink[] = isCompactPage
-    ? [
-        { label: "Home", to: "/", end: true },
-        { label: "About", to: "/about" },
-      ]
-    : isProviderArea
-    ? [
-        { label: "About", to: "/about" },
-        { label: "Messages", to: "/provider/messages" },
-        // REMOVED "Profile" from text links
-      ]
-    : isResidentArea
+  const links: NavigationLink[] =
+    user?.role === "provider"
       ? [
-          { label: "Dashboard", to: "/resident/dashboard" },
-          { label: "About", to: "/about" },
-          { label: "Messages", to: "/resident/dashboard#recent-conversations-heading" },
-          // REMOVED "Profile" from text links
+          { label: "Dashboard", to: "/provider/dashboard", end: true, icon: Home },
+          {
+            label: "My Services",
+            to: "/provider/services",
+            icon: BriefcaseBusiness,
+          },
+          {
+            label: "Messages",
+            to: "/provider/messages",
+            icon: MessageCircle,
+            active: messagesActive,
+          },
+          {
+            label: "Business Profile",
+            to: `/provider/profile/${profileId ?? user.id}`,
+            icon: UserRound,
+          },
         ]
-      : [
-          { label: "Home", to: "/", end: true },
-          { label: "About", to: "/about" },
-        ];
+      : user?.role === "resident"
+        ? [
+            { label: "Home", to: "/resident/dashboard", end: true, icon: Home },
+            { label: "Explore Services", to: "/#services", icon: Search },
+            { label: "Saved services", to: "/resident/saved", icon: Bookmark },
+            {
+              label: "Messages",
+              to: "/resident/messages",
+              icon: MessageCircle,
+              active: messagesActive,
+            },
+          ]
+        : user?.role === "admin"
+          ? [{ label: "Admin dashboard", to: "/admin/dashboard", icon: Home }]
+          : [
+              { label: "Home", to: "/", end: true, icon: Home },
+              { label: "About", to: "/about", icon: Info },
+            ];
+
+  async function handleLogout() {
+    setMenuOpen(false);
+    let errorMessage = "";
+    try {
+      await logout();
+    } catch (error) {
+      console.error("Could not sign out on the server.", error);
+      errorMessage = "We could not confirm sign-out with the server.";
+    } finally {
+      navigate("/login", {
+        replace: true,
+        state: errorMessage ? { logoutError: errorMessage } : undefined,
+      });
+    }
+  }
+
+  function closeMenu() {
+    setMenuOpen(false);
+  }
 
   return (
-    <header
-      className={`app-navigation${isCompactPage ? " is-compact" : ""}`}
-    >
+    <header className="app-navigation">
       <Link
         className="app-navigation__brand"
-        to="/"
+        to={
+          user?.role === "provider"
+            ? "/provider/dashboard"
+            : user?.role === "resident"
+              ? "/resident/dashboard"
+              : user?.role === "admin"
+                ? "/admin/dashboard"
+                : "/"
+        }
         aria-label="Skillz Directory home"
-        onClick={handleHomeClick}
+        onClick={closeMenu}
       >
         <span className="app-navigation__mark" aria-hidden="true">
           SD
@@ -97,32 +155,43 @@ export default function AppNavigation() {
       <button
         type="button"
         className="app-navigation__toggle"
+        onClick={() => setMenuOpen((open) => !open)}
         aria-label={menuOpen ? "Close navigation" : "Open navigation"}
         aria-expanded={menuOpen}
-        onClick={() => setMenuOpen((open) => !open)}
       >
         <span aria-hidden="true">{menuOpen ? "×" : "☰"}</span>
       </button>
 
-      <div
-        className={`app-navigation__content${menuOpen ? " is-open" : ""}`}
-      >
+      <div className={`app-navigation__content${menuOpen ? " is-open" : ""}`}>
         <nav className="app-navigation__links" aria-label="Main navigation">
           {links.map((link) => (
             <NavLink
               key={link.label}
               to={link.to}
               end={link.end}
-              onClick={
-                link.label === "Home"
-                  ? handleHomeClick
-                  : () => setMenuOpen(false)
-              }
+              onClick={closeMenu}
               className={({ isActive }) =>
-                `app-navigation__link${isActive ? " is-active" : ""}`
+                `app-navigation__link has-icon${
+                  isActive || link.active ? " is-active" : ""
+                }`
               }
             >
+              <span className="app-navigation__link-icon" aria-hidden="true">
+                <link.icon size={17} />
+                {link.label === "Messages" &&
+                  visibleUnreadCount !== null &&
+                  visibleUnreadCount > 0 && (
+                  <span className="app-navigation__notification">
+                    <Bell size={9} />
+                  </span>
+                )}
+              </span>
               {link.label}
+              {link.label === "Messages" &&
+                visibleUnreadCount !== null &&
+                visibleUnreadCount > 0 && (
+                <span className="app-navigation__badge">{visibleUnreadCount}</span>
+              )}
             </NavLink>
           ))}
         </nav>
@@ -130,39 +199,39 @@ export default function AppNavigation() {
         <div className="app-navigation__actions">
           {user ? (
             <>
-              {!(user.role === "provider" && isProviderArea) && (
+              {user.role === "resident" && (
                 <Link
-                  className="app-navigation__register"
-                  to={accountProfilePath}
-                  onClick={() => setMenuOpen(false)}
+                  className="app-navigation__profile-icon"
+                  to="/resident/profile"
+                  aria-label="Profile"
+                  title="Profile"
+                  onClick={closeMenu}
                 >
-                  Profile
+                  <UserRound size={20} aria-hidden="true" />
                 </Link>
               )}
-              {user.role === "provider" && (
-                <button
-                  type="button"
-                  className="app-navigation__logout"
-                  onClick={handleLogout}
-                >
-                  <LogOut size={16} aria-hidden="true" />
-                  Log out
-                </button>
-              )}
+              <button
+                type="button"
+                className="app-navigation__logout"
+                onClick={handleLogout}
+              >
+                <LogOut size={17} aria-hidden="true" />
+                <span>Log out</span>
+              </button>
             </>
           ) : (
             <>
               <Link
                 className="app-navigation__sign-in"
                 to="/login"
-                onClick={() => setMenuOpen(false)}
+                onClick={closeMenu}
               >
                 Sign in
               </Link>
               <Link
                 className="app-navigation__register"
                 to="/register"
-                onClick={() => setMenuOpen(false)}
+                onClick={closeMenu}
               >
                 Register
               </Link>
