@@ -2,6 +2,8 @@ import { useState } from "react";
 import type { FormEvent } from "react";
 import { isAxiosError } from "axios";
 import { Link, useLocation, useNavigate } from "react-router-dom";
+import { USE_DEV_FIXTURES } from "../../config/env";
+import { mockUserCredentials, mockUsers } from "../../data/mockUsers";
 import { useAuth } from "../../hooks/useAuth";
 import api from "../../services/api";
 import type { UserRole } from "../../types";
@@ -34,7 +36,7 @@ export default function AuthForm({ role, mode }: AuthFormProps) {
     : "Skillz Directory";
   const navigate = useNavigate();
   const location = useLocation();
-  const { login } = useAuth();
+  const { login, loading: authLoading, setUser } = useAuth();
 
   const [showPassword, setShowPassword] = useState(false);
   const [error, setError] = useState(() => {
@@ -85,6 +87,38 @@ export default function AuthForm({ role, mode }: AuthFormProps) {
         return;
       }
 
+      if (USE_DEV_FIXTURES) {
+        const demoRole = (
+          Object.keys(mockUserCredentials) as Array<
+            keyof typeof mockUserCredentials
+          >
+        ).find(
+          (candidate) =>
+            mockUserCredentials[candidate].email.toLowerCase() ===
+            email.toLowerCase(),
+        );
+
+        if (demoRole) {
+          if (role && role !== demoRole) {
+            setError(`This demo account is for the ${demoRole} portal.`);
+            return;
+          }
+          if (mockUserCredentials[demoRole].password !== password) {
+            setError("The demo account password is incorrect.");
+            return;
+          }
+          if (authLoading) {
+            setError("Please wait while the current session is checked.");
+            return;
+          }
+
+          const demoUser = mockUsers[demoRole];
+          setUser(demoUser);
+          navigate(getHomePath(demoUser.role), { replace: true });
+          return;
+        }
+      }
+
       const authenticatedUser = await login(email, password);
       const returnTo = (location.state as { from?: unknown } | null)?.from;
       if (
@@ -103,8 +137,16 @@ export default function AuthForm({ role, mode }: AuthFormProps) {
     }
   }
 
+  function signInAsDemo(demoRole: "resident" | "provider") {
+    if (!USE_DEV_FIXTURES || authLoading) return;
+    const demoUser = mockUsers[demoRole];
+    setUser(demoUser);
+    navigate(getHomePath(demoUser.role), { replace: true });
+  }
+
   const loginPath = role ? `/${role}/login` : "/login";
   const registerPath = role ? `/${role}/register` : "/register";
+  const demoRoles = role ? [role] : (["resident", "provider"] as const);
 
   return (
     <main className="auth-page">
@@ -221,6 +263,23 @@ export default function AuthForm({ role, mode }: AuthFormProps) {
             {loading ? "Please wait..." : isRegister ? "Create account" : "Sign in"}
           </button>
         </form>
+
+        {!isRegister && USE_DEV_FIXTURES && (
+          <section className="auth-demo" aria-label="Development demo accounts">
+            <p>Development-only demo accounts</p>
+            {demoRoles.map((demoRole) => (
+              <button
+                key={demoRole}
+                type="button"
+                className="auth-demo__button"
+                disabled={authLoading}
+                onClick={() => signInAsDemo(demoRole)}
+              >
+                Continue as {demoRole === "resident" ? "Resident" : "Provider"}
+              </button>
+            ))}
+          </section>
+        )}
 
         <p className="auth-switch">
           {isRegister ? "Already have an account?" : "Don't have an account?"}{" "}

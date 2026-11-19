@@ -10,6 +10,7 @@ import {
 import type { ReactNode } from "react";
 import { isAxiosError } from "axios";
 import type { User } from "../types";
+import { USE_DEV_FIXTURES } from "../config/env";
 import api from "../services/api";
 
 interface AuthContextValue {
@@ -24,9 +25,11 @@ const AuthContext = createContext<AuthContextValue | null>(null);
 
 export function AuthProvider({ children }: { children: ReactNode }) {
   const [user, setUserState] = useState<User | null>(null);
-  const [loading, setLoading] = useState(true);
+  const [loading, setLoading] = useState(!USE_DEV_FIXTURES);
 
   useEffect(() => {
+    if (USE_DEV_FIXTURES) return;
+
     let active = true;
 
     api
@@ -57,7 +60,9 @@ export function AuthProvider({ children }: { children: ReactNode }) {
 
   const logout = useCallback(async () => {
     try {
-      await api.post("/auth/logout");
+      if (!USE_DEV_FIXTURES) {
+        await api.post("/auth/logout");
+      }
     } finally {
       setUserState(null);
       localStorage.removeItem("token");

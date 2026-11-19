@@ -5,6 +5,7 @@ import {
   Bookmark,
   BriefcaseBusiness,
   Home,
+  Info,
   LogOut,
   MessageCircle,
   Search,
@@ -101,7 +102,7 @@ export default function AppNavigation() {
           ? [{ label: "Admin dashboard", to: "/admin/dashboard", icon: Home }]
           : [
               { label: "Home", to: "/", end: true, icon: Home },
-              { label: "Services", to: "/#services", icon: Search },
+              { label: "About", to: "/about", icon: Info },
             ];
 
   async function handleLogout() {
