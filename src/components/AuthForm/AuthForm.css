@@ -73,7 +73,8 @@
   font-weight: 600;
 }
 
-.auth-card input:not([type='checkbox']) {
+.auth-card input:not([type='checkbox']),
+.auth-card select {
   box-sizing: border-box;
   width: 100%;
   min-width: 0;
@@ -87,6 +88,11 @@
 }
 
 .auth-card input:focus {
+  border-color: #087e8b;
+  box-shadow: 0 0 0 3px rgba(8, 126, 139, 0.12);
+}
+
+.auth-card select:focus {
   border-color: #087e8b;
   box-shadow: 0 0 0 3px rgba(8, 126, 139, 0.12);
 }

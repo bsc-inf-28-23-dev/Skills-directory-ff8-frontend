@@ -1,4 +1,4 @@
-import { useMemo, useState } from "react";
+import { useCallback, useEffect, useMemo, useState } from "react";
 import type { ChangeEvent, FormEvent, ReactNode } from "react";
 import {
   BadgeCheck,
@@ -25,6 +25,7 @@ import type {
   ProviderPortfolioItem,
   ServiceProvider,
 } from "../../types/serviceProvider";
+import { providerService } from "../../services/providerService";
 import "./ProviderProfilePage.css";
 
 const emptyProfile: ProviderBusinessProfile = {
@@ -213,9 +214,62 @@ export default function ProviderProfileManagementPage({
   const [email, setEmail] = useState(user.email);
   const [activeSection, setActiveSection] = useState("personal");
   const [saving, setSaving] = useState(false);
+  const [profileLoading, setProfileLoading] = useState(true);
+  const [profileLoadError, setProfileLoadError] = useState("");
   const [uploadProgress, setUploadProgress] = useState<number | null>(null);
   const [uploadError, setUploadError] = useState("");
   const [feedback, setFeedback] = useState<{ kind: "success" | "error"; text: string } | null>(null);
+
+  const applyBackendProfile = useCallback((
+    business: Awaited<ReturnType<typeof providerService.getMyProfile>>,
+    account: User,
+  ) => {
+    setBusinessName(business.businessName);
+    setPerson(account.fullName || business.contactPerson);
+    setCategory(business.category);
+    setArea(business.serviceArea);
+    setQuote(business.about);
+    setServices(business.skills.join(", "));
+    setPhone(account.phone ?? "");
+    setEmail(account.email);
+    setAvatar(account.avatarUrl ?? business.photoUrl ?? provider.photo ?? "");
+    setProfile((current) => ({
+      ...current,
+      skills: business.skills,
+      city: current.city || business.serviceArea,
+    }));
+  }, [provider.photo]);
+
+  useEffect(() => {
+    let active = true;
+
+    async function loadProfile() {
+      setProfileLoading(true);
+      setProfileLoadError("");
+      try {
+        const [business, account] = await Promise.all([
+          providerService.getMyProfile(),
+          providerService.getMyAccount(),
+        ]);
+        if (!active) return;
+        applyBackendProfile(business, account);
+      } catch (error) {
+        console.error("Could not load provider profile from the backend.", error);
+        if (active) {
+          setProfileLoadError(
+            "Your business profile could not be loaded from the server. Check your connection and try again.",
+          );
+        }
+      } finally {
+        if (active) setProfileLoading(false);
+      }
+    }
+
+    void loadProfile();
+    return () => {
+      active = false;
+    };
+  }, [applyBackendProfile]);
 
   const completion = useMemo(() => {
     const required = [
@@ -395,18 +449,26 @@ export default function ProviderProfileManagementPage({
   }
 
   function cancelChanges() {
-    setBusinessName(provider.name);
-    setPerson(user.fullName || provider.person);
-    setCategory(provider.category);
-    setArea(provider.area);
-    setServices(provider.services.join(", "));
-    setQuote(provider.quote);
-    setPhone(user.phone ?? "");
-    setEmail(user.email);
-    setAvatar(user.avatarUrl ?? provider.photo ?? "");
     setProfile(getProfileDetails(provider));
     setFeedback(null);
+    retryProfileLoad();
   }
+
+  const retryProfileLoad = useCallback(() => {
+    setProfileLoadError("");
+    setProfileLoading(true);
+    Promise.all([providerService.getMyProfile(), providerService.getMyAccount()])
+      .then(([business, account]) => {
+        applyBackendProfile(business, account);
+      })
+      .catch((error: unknown) => {
+        console.error("Could not reload provider profile.", error);
+        setProfileLoadError(
+          "Your business profile could not be loaded from the server. Check your connection and try again.",
+        );
+      })
+      .finally(() => setProfileLoading(false));
+  }, [applyBackendProfile]);
 
   function navigateToSection(sectionId: string) {
     setActiveSection(sectionId);
@@ -422,6 +484,35 @@ export default function ProviderProfileManagementPage({
     verified: "Verified",
     suspended: "Suspended",
   }[profile.verificationStatus];
+
+  if (profileLoading || profileLoadError) {
+    return (
+      <main className="provider-profile">
+        <div className="provider-profile__container">
+          <div className="provider-profile__heading">
+            <div>
+              <p className="provider-profile__eyebrow">PROVIDER WORKSPACE</p>
+              <h1>Business Profile</h1>
+              <p>Manage your personal details, business information, and public profile.</p>
+            </div>
+            <button type="button" className="provider-profile__back" onClick={onBack}>
+              Back to dashboard
+            </button>
+          </div>
+          {profileLoading ? (
+            <p className="alert alert-info" role="status">Loading your business profile…</p>
+          ) : (
+            <div className="alert alert-danger" role="alert">
+              <p>{profileLoadError}</p>
+              <button type="button" className="btn btn-outline-danger" onClick={retryProfileLoad}>
+                Try again
+              </button>
+            </div>
+          )}
+        </div>
+      </main>
+    );
+  }
 
   return (
     <main className="provider-profile">
@@ -441,7 +532,7 @@ export default function ProviderProfileManagementPage({
         </div>
 
         <div className="provider-profile__prototype-note" role="note">
-          This prototype stores profile details locally in this browser, not in an access-controlled account service. Uploaded documents are not sent for review; avoid adding sensitive identity documents until secure backend verification is available.
+          Business contact details are saved to your account. Branding images, portfolio items, and verification files remain in this browser and are not submitted for administrator review.
         </div>
 
         <section className="provider-profile__hero" aria-label="Profile overview">

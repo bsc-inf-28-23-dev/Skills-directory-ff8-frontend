@@ -1,4 +1,4 @@
-import { useEffect, useState } from "react";
+import { useEffect, useRef, useState } from "react";
 import "../service-directory.css";
 import { categories, providers } from "../data/provider";
 import { loadProviders, saveProviders } from "../data/providerStorage";
@@ -15,6 +15,11 @@ import ServiceDetailsPage from "./ServiceDetailsPage";
 import { useAuth } from "../hooks/useAuth";
 import type { ServiceProvider } from "../types/serviceProvider";
 import {
+  providerService,
+  type ProviderProfileData,
+} from "../services/providerService";
+import type { User } from "../types";
+import {
   createProviderProfile,
   getProviderProfileRouteId,
 } from "../data/providerAccount";
@@ -23,6 +28,9 @@ export default function ServiceDirectoryApp() {
   const [providerData, setProviderData] = useState<ServiceProvider[]>(providers);
   const [storageError, setStorageError] = useState("");
   const [providerDataLoading, setProviderDataLoading] = useState(true);
+  const providerDataRef = useRef(providerData);
+  const loadRequestRef = useRef<Promise<ServiceProvider[] | null> | null>(null);
+  const saveQueueRef = useRef<Promise<void>>(Promise.resolve());
   const navigate = useNavigate();
   const location = useLocation();
   const { user, setUser } = useAuth();
@@ -47,10 +55,14 @@ export default function ServiceDirectoryApp() {
   useEffect(() => {
     let isCurrent = true;
 
-    loadProviders()
+    const loadRequest = loadProviders();
+    loadRequestRef.current = loadRequest;
+
+    loadRequest
       .then((storedProviders) => {
         if (!isCurrent || !storedProviders) return;
 
+        providerDataRef.current = storedProviders;
         setProviderData(storedProviders);
       })
       .catch((error: unknown) => {
@@ -72,31 +84,84 @@ export default function ServiceDirectoryApp() {
 
   async function saveProvider(
     updatedProvider: ServiceProvider,
-    updatedUser: NonNullable<typeof user>,
+    updatedUser: User,
   ): Promise<boolean> {
-    const hasProvider = providerData.some(
-      (provider) => provider.id === updatedProvider.id,
-    );
-    const updatedProviders = hasProvider
-      ? providerData.map((provider) =>
-          provider.id === updatedProvider.id ? updatedProvider : provider,
-        )
-      : [...providerData, updatedProvider];
-
+    let savedProfile: ProviderProfileData;
+    let savedUser: User;
     try {
-      await saveProviders(updatedProviders);
-      setProviderData(updatedProviders);
-      setUser({ ...updatedUser, providerProfileId: updatedProvider.id });
-      setStorageError("");
-      return true;
+      [savedProfile, savedUser] = await Promise.all([
+        providerService.updateMyProfile({
+          businessName: updatedProvider.name,
+          contactPerson: updatedUser.fullName,
+          category: updatedProvider.category,
+          serviceArea: updatedProvider.area,
+          about: updatedProvider.quote,
+        }),
+        providerService.updateMyAccount({
+          fullName: updatedUser.fullName,
+          phone: updatedUser.phone,
+        }),
+      ]);
+      await providerService.updateMySkills(updatedProvider.profile?.skills ?? []);
     } catch (error) {
-      console.error("Could not save provider data.", error);
+      console.error("Could not save provider profile to the backend.", error);
       setStorageError(
-        "Profile changes could not be saved in this browser. Please try again.",
+        "Your profile could not be saved to your account. Check your connection and try again.",
       );
       return false;
     }
-  } 
+
+    const providerToSave: ServiceProvider = {
+      ...updatedProvider,
+      name: savedProfile.businessName,
+      person: savedProfile.contactPerson,
+      category: savedProfile.category,
+      area: savedProfile.serviceArea,
+      quote: savedProfile.about,
+      rating: savedProfile.rating ?? updatedProvider.rating,
+      reviews: savedProfile.reviewCount ?? updatedProvider.reviews,
+      photo: savedProfile.photoUrl ?? updatedProvider.photo,
+      profile: updatedProvider.profile
+        ? { ...updatedProvider.profile, skills: savedProfile.skills }
+        : undefined,
+    };
+
+    setUser({
+      ...updatedUser,
+      ...savedUser,
+      providerProfileId: savedProfile.id || updatedProvider.id,
+    });
+
+    const saveRequest = saveQueueRef.current.then(async () => {
+      await loadRequestRef.current;
+
+      const hasProvider = providerDataRef.current.some(
+        (provider) => provider.id === providerToSave.id,
+      );
+      const updatedProviders = hasProvider
+        ? providerDataRef.current.map((provider) =>
+            provider.id === providerToSave.id ? providerToSave : provider,
+          )
+        : [...providerDataRef.current, providerToSave];
+
+      await saveProviders(updatedProviders);
+      providerDataRef.current = updatedProviders;
+      setProviderData(updatedProviders);
+    });
+
+    saveQueueRef.current = saveRequest.catch(() => undefined);
+
+    try {
+      await saveRequest;
+      setStorageError("");
+    } catch (error) {
+      console.error("Backend profile was saved, but the public profile cache was not updated.", error);
+      setStorageError(
+        "Your account profile was saved, but the local public profile could not be refreshed.",
+      );
+    }
+    return true;
+  }
 
   if (serviceMatch && !profileProvider) {
     return <Navigate to="/#services" replace />;

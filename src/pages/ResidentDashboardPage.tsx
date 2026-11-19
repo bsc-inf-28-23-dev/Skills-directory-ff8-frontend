@@ -1,6 +1,13 @@
-import { useState, type FormEvent } from "react";
-import { Link, Navigate, useNavigate } from "react-router-dom";
-import { ArrowRight, Bookmark, MessageCircle, Search, UserRound } from "lucide-react";
+import { useEffect, useState } from "react";
+import type { FormEvent } from "react";
+import { Link, useNavigate } from "react-router-dom";
+import {
+  ArrowRight,
+  Bookmark,
+  MessageCircle,
+  Search,
+  UserRound,
+} from "lucide-react";
 import ErrorAlert from "../components/ErrorAlert";
 import Eyebrow from "../components/Eyebrow";
 import { providers } from "../data/provider";
@@ -8,38 +15,81 @@ import RecentConversations from "../features/resident/RecentConversations";
 import RecentProviders from "../features/resident/RecentProviders";
 import { useAuth } from "../hooks/useAuth";
 import { useSavedServices } from "../hooks/useSavedServices";
+import {
+  getRecentlyViewedProviders,
+  getRecentConversations,
+} from "../services/residentService";
 import "./ResidentDashboardPage.css";
+
+interface DashboardStats {
+  providersViewed: number | null;
+  conversations: number | null;
+}
 
 export default function ResidentDashboardPage() {
   const { user } = useAuth();
   const navigate = useNavigate();
   const [serviceSearch, setServiceSearch] = useState("");
-  const {
-    savedServices,
-    error: savedServicesError,
-  } = useSavedServices(user?.id);
+  const [stats, setStats] = useState<DashboardStats>({
+    providersViewed: null,
+    conversations: null,
+  });
+  const [statsLoading, setStatsLoading] = useState(true);
+  const [statsError, setStatsError] = useState("");
+  const { savedServices, error: savedServicesError } = useSavedServices(user?.id);
 
-  if (!user) {
-    return (
-      <Navigate
-        to="/login"
-        replace
-        state={{ from: "/resident/dashboard" }}
-      />
-    );
-  }
+  useEffect(() => {
+    let active = true;
 
-  if (user.role !== "resident") {
-    return <Navigate to="/provider/dashboard" replace />;
-  }
+    async function loadStats() {
+      setStatsLoading(true);
+      setStatsError("");
+      const [providersResult, conversationsResult] = await Promise.allSettled([
+        getRecentlyViewedProviders(),
+        getRecentConversations(5),
+      ]);
 
-  const firstName = user.fullName.trim().split(/\s+/)[0] || "there";
+      if (!active) return;
+      if (providersResult.status === "fulfilled") {
+        setStats((current) => ({
+          ...current,
+          providersViewed: providersResult.value.length,
+        }));
+      } else {
+        console.error("Could not load recently viewed provider statistics.", providersResult.reason);
+      }
+
+      if (conversationsResult.status === "fulfilled") {
+        setStats((current) => ({
+          ...current,
+          conversations: conversationsResult.value.length,
+        }));
+      } else {
+        console.error("Could not load conversation statistics.", conversationsResult.reason);
+      }
+
+      if (
+        providersResult.status === "rejected" ||
+        conversationsResult.status === "rejected"
+      ) {
+        setStatsError("Some dashboard statistics could not be loaded.");
+      }
+      setStatsLoading(false);
+    }
+
+    void loadStats();
+    return () => {
+      active = false;
+    };
+  }, []);
+
+  const firstName = user?.fullName.trim().split(/\s+/)[0] || "there";
   const hasProfile = Boolean(
-    user.bio ||
-      user.avatarUrl ||
-      user.location ||
-      user.occupation ||
-      (user.languages && user.languages.length > 0),
+    user?.bio ||
+      user?.avatarUrl ||
+      user?.location ||
+      user?.occupation ||
+      user?.languages?.length,
   );
   const visibleSavedServices = savedServices.slice(0, 3);
 
@@ -59,7 +109,6 @@ export default function ResidentDashboardPage() {
           </h1>
           <p>Find a trusted local professional or pick up where you left off.</p>
         </div>
-
         <form className="resident-home__search" onSubmit={handleSearch} role="search">
           <Search size={20} aria-hidden="true" />
           <input
@@ -73,19 +122,15 @@ export default function ResidentDashboardPage() {
             Find services
           </button>
         </form>
-
       </section>
 
       {!hasProfile && (
         <section className="resident-home__profile-prompt" aria-label="Complete your profile">
           <div>
             <p className="eyebrow mb-2">A better introduction</p>
-            <h2 className="display-heading display-heading-md">
-              Complete your profile
-            </h2>
+            <h2 className="display-heading display-heading-md">Complete your profile</h2>
             <p>
-              Add a photo and a few details so providers know who they are
-              speaking with.
+              Add a photo and a few details so providers know who they are speaking with.
             </p>
           </div>
           <Link to="/resident/profile" className="btn btn-trade">
@@ -93,6 +138,19 @@ export default function ResidentDashboardPage() {
           </Link>
         </section>
       )}
+
+      <section className="resident-home__stats" aria-label="Account activity">
+        <StatCard
+          label="Providers viewed"
+          value={statsLoading ? "—" : stats.providersViewed?.toString() ?? "—"}
+        />
+        <StatCard
+          label="Recent conversations"
+          value={statsLoading ? "—" : stats.conversations?.toString() ?? "—"}
+        />
+        <StatCard label="Reviews written" value="—" description="Not available yet" />
+        {statsError && <p className="resident-home__stats-error" role="status">{statsError}</p>}
+      </section>
 
       <div className="resident-home__activity-grid">
         <section
@@ -126,16 +184,11 @@ export default function ResidentDashboardPage() {
               </Link>
             </div>
 
-            {savedServicesError && (
-              <ErrorAlert message={savedServicesError} />
-            )}
-
+            {savedServicesError && <ErrorAlert message={savedServicesError} />}
             {visibleSavedServices.length > 0 ? (
               <ul className="resident-home__saved-list">
                 {visibleSavedServices.map((saved) => {
-                  const provider = providers.find(
-                    (item) => item.id === saved.providerId,
-                  );
+                  const provider = providers.find((item) => item.id === saved.providerId);
                   return (
                     <li key={`${saved.providerId}-${saved.service}`}>
                       <Link
@@ -181,5 +234,23 @@ export default function ResidentDashboardPage() {
         </div>
       </div>
     </main>
+  );
+}
+
+function StatCard({
+  label,
+  value,
+  description,
+}: {
+  label: string;
+  value: string;
+  description?: string;
+}) {
+  return (
+    <article className="resident-home__stat">
+      <span>{label}</span>
+      <strong>{value}</strong>
+      {description && <small>{description}</small>}
+    </article>
   );
 }

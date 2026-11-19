@@ -1,60 +1,85 @@
-import { useCallback, useSyncExternalStore } from "react";
+import {
+  createContext,
+  createElement,
+  useCallback,
+  useContext,
+  useEffect,
+  useMemo,
+  useState,
+} from "react";
+import type { ReactNode } from "react";
+import { isAxiosError } from "axios";
 import type { User } from "../types";
+import api from "../services/api";
 
-interface AuthState {
+interface AuthContextValue {
   user: User | null;
   loading: boolean;
-  logout: () => void;
-  setUser: (user: User) => void;
+  login: (email: string, password: string) => Promise<User>;
+  logout: () => Promise<void>;
+  setUser: (nextUser: User) => void;
 }
 
-function readStoredUser(): User | null {
-  try {
-    const raw = localStorage.getItem("user");
-    if (!raw) return null;
+const AuthContext = createContext<AuthContextValue | null>(null);
 
-    const savedUser = JSON.parse(raw) as User;
-    if (savedUser.id === "dev-resident-1") {
-      localStorage.removeItem("user");
-      return null;
+export function AuthProvider({ children }: { children: ReactNode }) {
+  const [user, setUserState] = useState<User | null>(null);
+  const [loading, setLoading] = useState(true);
+
+  useEffect(() => {
+    let active = true;
+
+    api
+      .get<User>("/auth/me")
+      .then(({ data }) => {
+        if (active) setUserState(data);
+      })
+      .catch((error: unknown) => {
+        if (isAxiosError(error) && error.response?.status !== 401) {
+          console.error("Could not verify the current session.", error);
+        }
+        if (active) setUserState(null);
+      })
+      .finally(() => {
+        if (active) setLoading(false);
+      });
+
+    return () => {
+      active = false;
+    };
+  }, []);
+
+  const login = useCallback(async (email: string, password: string) => {
+    const { data } = await api.post<User>("/auth/login", { email, password });
+    setUserState(data);
+    return data;
+  }, []);
+
+  const logout = useCallback(async () => {
+    try {
+      await api.post("/auth/logout");
+    } finally {
+      setUserState(null);
+      localStorage.removeItem("token");
     }
+  }, []);
 
-    return savedUser;
-  } catch {
-    return null;
+  const setUser = useCallback((nextUser: User) => {
+    setUserState(nextUser);
+  }, []);
+
+  const value = useMemo(
+    () => ({ user, loading, login, logout, setUser }),
+    [user, loading, login, logout, setUser],
+  );
+
+  return createElement(AuthContext.Provider, { value }, children);
+}
+
+export function useAuth() {
+  const context = useContext(AuthContext);
+  if (!context) {
+    throw new Error("useAuth must be used within an AuthProvider.");
   }
-}
-
-let currentUser = readStoredUser();
-const subscribers = new Set<() => void>();
-
-function subscribe(callback: () => void) {
-  subscribers.add(callback);
-  return () => subscribers.delete(callback);
-}
-
-function getSnapshot() {
-  return currentUser;
-}
-
-function notifySubscribers() {
-  subscribers.forEach((callback) => callback());
-}
-
-export function useAuth(): AuthState {
-  const user = useSyncExternalStore(subscribe, getSnapshot, getSnapshot);
-
-  const setUser = useCallback((next: User) => {
-    localStorage.setItem("user", JSON.stringify(next));
-    currentUser = next;
-    notifySubscribers();
-  }, []);
-
-  const logout = useCallback(() => {
-    localStorage.removeItem("user");
-    currentUser = null;
-    notifySubscribers();
-  }, []);
-
-  return { user, loading: false, logout, setUser };
+  return context;
 }

@@ -1,5 +1,5 @@
-import { useState } from "react";
-import { Link, NavLink, useLocation, useNavigate } from "react-router-dom";
+import { useEffect, useState } from "react";
+import type { LucideIcon } from "lucide-react";
 import {
   Bell,
   Bookmark,
@@ -9,114 +9,136 @@ import {
   MessageCircle,
   Search,
   UserRound,
-  type LucideIcon,
 } from "lucide-react";
-import { useAuth } from "../hooks/useAuth";
+import { Link, NavLink, useLocation, useNavigate } from "react-router-dom";
 import { getProviderProfileRouteId } from "../data/providerAccount";
-import { providerConversations } from "../data/providerConversations";
+import { useAuth } from "../hooks/useAuth";
+import { getConversations } from "../services/chatService";
 import "./AppNavigation.css";
 
 interface NavigationLink {
   label: string;
   to: string;
   end?: boolean;
-  icon?: LucideIcon;
-  notification?: boolean;
+  icon: LucideIcon;
+  active?: boolean;
 }
 
 export default function AppNavigation() {
   const { pathname } = useLocation();
   const navigate = useNavigate();
   const { user, logout } = useAuth();
-  const providerProfileId = getProviderProfileRouteId(user);
   const [menuOpen, setMenuOpen] = useState(false);
+  const [unreadCount, setUnreadCount] = useState<number | null>(null);
 
-  const handleHomeClick = () => {
-    setMenuOpen(false);
-    window.scrollTo({ top: 0, behavior: "smooth" });
-  };
   const isAuthPage = /\/(login|register|forgot-password)$/.test(pathname);
-  const isCompactPage =
-    isAuthPage ||
-    (pathname.startsWith("/conversation/") && user?.role !== "resident") ||
-    (pathname.startsWith("/provider/conversation/") &&
-      user?.role !== "provider");
-  const isProviderArea =
-    !isCompactPage && user?.role === "provider";
-  const isResidentArea =
-    !isCompactPage && user?.role === "resident";
-  const profilePath = providerProfileId
-    ? `/provider/profile/${providerProfileId}`
-    : "/provider/dashboard";
-  const homePath =
-    user?.role === "resident"
-      ? "/resident/dashboard"
-      : user?.role === "provider"
-        ? "/provider/dashboard"
-        : "/";
-  const accountProfilePath =
-    user?.role === "resident" ? "/resident/profile" : profilePath;
-  const isResidentConversation =
+  const profileId = getProviderProfileRouteId(user);
+  const messagesActive =
+    pathname.startsWith("/resident/messages") ||
+    pathname.startsWith("/provider/messages") ||
     pathname.startsWith("/conversation/") ||
-    pathname.startsWith("/resident/messages/");
-  const isProviderConversation = pathname.startsWith("/provider/conversation/");
-  const hasUnreadProviderMessages = providerConversations.some(
-    (conversation) => conversation.unreadCount > 0,
-  );
+    pathname.startsWith("/provider/conversation/");
+
+  useEffect(() => {
+    let active = true;
+    async function loadUnreadCount() {
+      try {
+        const conversations = await getConversations();
+        const total = conversations.reduce(
+          (count, conversation) => count + (conversation.unreadCount || 0),
+          0,
+        );
+        if (active) setUnreadCount(total);
+      } catch (error) {
+        console.error("Could not load unread message count.", error);
+        if (active) setUnreadCount(null);
+      }
+    }
+
+    if (user && !isAuthPage) void loadUnreadCount();
+    return () => {
+      active = false;
+    };
+  }, [isAuthPage, user]);
+
+  if (isAuthPage) return null;
+  const visibleUnreadCount = user ? unreadCount : null;
+
+  const links: NavigationLink[] =
+    user?.role === "provider"
+      ? [
+          { label: "Dashboard", to: "/provider/dashboard", end: true, icon: Home },
+          {
+            label: "My Services",
+            to: "/provider/services",
+            icon: BriefcaseBusiness,
+          },
+          {
+            label: "Messages",
+            to: "/provider/messages",
+            icon: MessageCircle,
+            active: messagesActive,
+          },
+          {
+            label: "Business Profile",
+            to: `/provider/profile/${profileId ?? user.id}`,
+            icon: UserRound,
+          },
+        ]
+      : user?.role === "resident"
+        ? [
+            { label: "Home", to: "/resident/dashboard", end: true, icon: Home },
+            { label: "Explore Services", to: "/#services", icon: Search },
+            { label: "Saved services", to: "/resident/saved", icon: Bookmark },
+            {
+              label: "Messages",
+              to: "/resident/messages",
+              icon: MessageCircle,
+              active: messagesActive,
+            },
+          ]
+        : user?.role === "admin"
+          ? [{ label: "Admin dashboard", to: "/admin/dashboard", icon: Home }]
+          : [
+              { label: "Home", to: "/", end: true, icon: Home },
+              { label: "Services", to: "/#services", icon: Search },
+            ];
 
   async function handleLogout() {
     setMenuOpen(false);
+    let errorMessage = "";
     try {
       await logout();
-      navigate(user?.role === "provider" ? "/provider/login" : "/login", {
-        replace: true,
-      });
     } catch (error) {
-      console.error("Could not sign out.", error);
+      console.error("Could not sign out on the server.", error);
+      errorMessage = "We could not confirm sign-out with the server.";
+    } finally {
+      navigate("/login", {
+        replace: true,
+        state: errorMessage ? { logoutError: errorMessage } : undefined,
+      });
     }
   }
 
-  const links: NavigationLink[] = isCompactPage
-    ? [
-        { label: "Home", to: "/", end: true },
-        { label: "About", to: "/about" },
-      ]
-    : isResidentArea
-      ? [
-          { label: "Home", to: "/resident/dashboard", end: true, icon: Home },
-          { label: "Explore Services", to: "/#services", icon: Search },
-          { label: "Saved services", to: "/resident/saved", icon: Bookmark },
-          {
-            label: "Messages",
-            to: "/resident/messages",
-            icon: MessageCircle,
-          },
-        ]
-    : isProviderArea
-    ? [
-        { label: "Dashboard", to: "/provider/dashboard", end: true, icon: Home },
-        { label: "My Services", to: "/provider/services", icon: BriefcaseBusiness },
-        {
-          label: "Messages",
-          to: "/provider/messages",
-          icon: MessageCircle,
-          notification: hasUnreadProviderMessages,
-        },
-      ]
-      : [
-          { label: "Home", to: "/", end: true },
-          { label: "About", to: "/about" },
-        ];
+  function closeMenu() {
+    setMenuOpen(false);
+  }
 
   return (
-    <header
-      className={`app-navigation${isCompactPage ? " is-compact" : ""}`}
-    >
+    <header className="app-navigation">
       <Link
         className="app-navigation__brand"
-        to={homePath}
+        to={
+          user?.role === "provider"
+            ? "/provider/dashboard"
+            : user?.role === "resident"
+              ? "/resident/dashboard"
+              : user?.role === "admin"
+                ? "/admin/dashboard"
+                : "/"
+        }
         aria-label="Skillz Directory home"
-        onClick={handleHomeClick}
+        onClick={closeMenu}
       >
         <span className="app-navigation__mark" aria-hidden="true">
           SD
@@ -132,51 +154,43 @@ export default function AppNavigation() {
       <button
         type="button"
         className="app-navigation__toggle"
+        onClick={() => setMenuOpen((open) => !open)}
         aria-label={menuOpen ? "Close navigation" : "Open navigation"}
         aria-expanded={menuOpen}
-        onClick={() => setMenuOpen((open) => !open)}
       >
         <span aria-hidden="true">{menuOpen ? "×" : "☰"}</span>
       </button>
 
-      <div
-        className={`app-navigation__content${menuOpen ? " is-open" : ""}`}
-      >
+      <div className={`app-navigation__content${menuOpen ? " is-open" : ""}`}>
         <nav className="app-navigation__links" aria-label="Main navigation">
           {links.map((link) => (
             <NavLink
               key={link.label}
               to={link.to}
               end={link.end}
-              onClick={
-                link.label === "Home"
-                  ? handleHomeClick
-                  : () => setMenuOpen(false)
-              }
+              onClick={closeMenu}
               className={({ isActive }) =>
-                `app-navigation__link${
-                  isActive ||
-                  (link.label === "Messages" &&
-                    ((user?.role === "resident" && isResidentConversation) ||
-                      (user?.role === "provider" && isProviderConversation)))
-                    ? " is-active"
-                    : ""
-                }${
-                  link.icon ? " has-icon" : ""
+                `app-navigation__link has-icon${
+                  isActive || link.active ? " is-active" : ""
                 }`
               }
             >
-              {link.icon && (
-                <span className="app-navigation__link-icon" aria-hidden="true">
-                  <link.icon size={17} />
-                  {link.notification && (
-                    <span className="app-navigation__notification">
-                      <Bell size={9} />
-                    </span>
-                  )}
-                </span>
-              )}
+              <span className="app-navigation__link-icon" aria-hidden="true">
+                <link.icon size={17} />
+                {link.label === "Messages" &&
+                  visibleUnreadCount !== null &&
+                  visibleUnreadCount > 0 && (
+                  <span className="app-navigation__notification">
+                    <Bell size={9} />
+                  </span>
+                )}
+              </span>
               {link.label}
+              {link.label === "Messages" &&
+                visibleUnreadCount !== null &&
+                visibleUnreadCount > 0 && (
+                <span className="app-navigation__badge">{visibleUnreadCount}</span>
+              )}
             </NavLink>
           ))}
         </nav>
@@ -184,39 +198,39 @@ export default function AppNavigation() {
         <div className="app-navigation__actions">
           {user ? (
             <>
-              <Link
-                className="app-navigation__profile-icon"
-                to={accountProfilePath}
-                aria-label="Profile"
-                title="Profile"
-                onClick={() => setMenuOpen(false)}
-              >
-                <UserRound size={20} aria-hidden="true" />
-              </Link>
-              {user.role === "provider" && (
-                <button
-                  type="button"
-                  className="app-navigation__logout"
-                  onClick={handleLogout}
+              {user.role === "resident" && (
+                <Link
+                  className="app-navigation__profile-icon"
+                  to="/resident/profile"
+                  aria-label="Profile"
+                  title="Profile"
+                  onClick={closeMenu}
                 >
-                  <LogOut size={17} aria-hidden="true" />
-                  <span>Log out</span>
-                </button>
+                  <UserRound size={20} aria-hidden="true" />
+                </Link>
               )}
+              <button
+                type="button"
+                className="app-navigation__logout"
+                onClick={handleLogout}
+              >
+                <LogOut size={17} aria-hidden="true" />
+                <span>Log out</span>
+              </button>
             </>
           ) : (
             <>
               <Link
                 className="app-navigation__sign-in"
                 to="/login"
-                onClick={() => setMenuOpen(false)}
+                onClick={closeMenu}
               >
                 Sign in
               </Link>
               <Link
                 className="app-navigation__register"
                 to="/register"
-                onClick={() => setMenuOpen(false)}
+                onClick={closeMenu}
               >
                 Register
               </Link>

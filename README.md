@@ -71,5 +71,13 @@ export default defineConfig([
     },
   },
 ])
+## Frontend Docker Deployment
+
+To run the production build of the frontend:
+
+1. Ensure Docker Desktop is running.
+2. Build the image:
+   ```bash
+   docker build -t skillz-frontend .
 
 ```

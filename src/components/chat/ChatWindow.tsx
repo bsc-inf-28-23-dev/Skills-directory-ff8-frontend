@@ -8,11 +8,10 @@ import './ChatWindow.css';
 interface Props {
   myRole: Role;
   myId: string;
-  otherPartyId: string;
   otherPartyName: string;
   messages: Message[];
   onSend: (text: string) => void;
-  onBack?: () => void;
+  isConnected?: boolean;
 }
 
 export const ChatWindow: React.FC<Props> = ({
@@ -21,7 +20,7 @@ export const ChatWindow: React.FC<Props> = ({
   otherPartyName,
   messages,
   onSend,
-  onBack,
+  isConnected = false,
 }) => {
   const bottomRef = useRef<HTMLDivElement | null>(null);
 
@@ -32,19 +31,12 @@ export const ChatWindow: React.FC<Props> = ({
   return (
     <div className="chat-page">
       <div className="chat-header">
-        {onBack ? (
-          <button className="chat-back-btn" onClick={onBack}>
-            ← Back
-          </button>
-        ) : (
-          <div className="chat-header-spacer" />
-        )}
+        <div className="chat-header-spacer" />
 
         <div className="chat-header-center">
           <div className="chat-provider-name">{otherPartyName}</div>
-          {/* Hardcoded demo status */}
-          <small className="chat-status" style={{ color: '#6b6375' }}>
-            ○ Demo Mode
+          <small className="chat-status" style={{ color: isConnected ? '#28a745' : '#6b6375' }}>
+            {isConnected ? '● Connected' : '○ Offline'}
           </small>
         </div>
 
