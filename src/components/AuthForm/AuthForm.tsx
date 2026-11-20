@@ -1,30 +1,20 @@
-
 import axios from 'axios';
 import { useState, type FormEvent } from 'react';
 import { Link, useLocation, useNavigate } from 'react-router-dom';
 import './AuthForm.css';
 import { useAuth } from '../../hooks/useAuth';
 import { loginUser, registerUser } from '../../services/authService';
-import { USE_DEV_FIXTURES } from '../../config/env';
-import { mockUserCredentials, mockUsers } from '../../data/mockUsers';
 import type { User } from '../../types';
 
 type AuthFormProps = {
+  // Kept temporarily for compatibility with existing role-specific wrappers.
   role?: 'resident' | 'provider';
   mode: 'login' | 'register';
 };
 
-export default function AuthForm({ role, mode }: AuthFormProps) {
+export default function AuthForm({ mode }: AuthFormProps) {
   const isRegister = mode === 'register';
-  const roleName =
-    role === 'resident' ? 'Resident' : role === 'provider' ? 'Service Provider' : 'Account';
-  const switchPath = isRegister
-    ? role
-      ? `/${role}/login`
-      : '/login'
-    : role
-      ? `/${role}/register`
-      : '/register';
+
   const navigate = useNavigate();
   const location = useLocation();
   const { setUser } = useAuth();
@@ -32,11 +22,13 @@ export default function AuthForm({ role, mode }: AuthFormProps) {
   const [showPassword, setShowPassword] = useState(false);
   const [error, setError] = useState('');
   const [message, setMessage] = useState('');
+  const [isSubmitting, setIsSubmitting] = useState(false);
 
   function finishSignIn(user: User, accessToken?: string) {
     setUser(user, accessToken);
 
     const returnTo = (location.state as { from?: unknown } | null)?.from;
+
     if (typeof returnTo === 'string' && returnTo.startsWith('/')) {
       navigate(returnTo, { replace: true });
       return;
@@ -48,73 +40,78 @@ export default function AuthForm({ role, mode }: AuthFormProps) {
         : user.role === 'admin'
           ? '/admin/dashboard'
           : '/resident/dashboard';
-    navigate(destination, { replace: true });
-  }
 
-  function loginAsDemo(account: 'resident' | 'provider') {
-    finishSignIn(mockUsers[account]);
+    navigate(destination, { replace: true });
   }
 
   async function handleSubmit(event: FormEvent<HTMLFormElement>) {
     event.preventDefault();
+
     setError('');
     setMessage('');
+    setIsSubmitting(true);
 
     const formData = new FormData(event.currentTarget);
+
     const fullName = String(formData.get('fullName') ?? '').trim();
     const phone = String(formData.get('phone') ?? '').trim();
     const email = String(formData.get('email') ?? '').trim();
     const password = String(formData.get('password') ?? '');
     const confirmPassword = String(formData.get('confirmPassword') ?? '');
 
+    // If no account type is selected, use resident by default.
+    const selectedRole =
+      formData.get('role') === 'provider' ? 'provider' : 'resident';
+
     if (isRegister && password !== confirmPassword) {
       setError('Your passwords do not match.');
+      setIsSubmitting(false);
       return;
     }
 
     try {
       if (isRegister) {
-        if (!role) {
-          setError('Choose an account type before registering.');
-          return;
-        }
-        await registerUser({ fullName, phone, email, password, role });
-        setMessage('Successfully registered! You may log in.');
+        await registerUser({
+          fullName,
+          phone,
+          email,
+          password,
+          role: selectedRole,
+        });
+
+        setMessage('Successfully registered! Redirecting you to sign in...');
+
         setTimeout(() => {
-          navigate(`/${role}/login`, {
+          navigate('/login', {
+            replace: true,
             state: { registrationSuccess: true },
           });
         }, 1500);
+
         return;
       }
 
-      if (USE_DEV_FIXTURES) {
-        const demoAccount =
-          email === mockUserCredentials.resident.email &&
-          password === mockUserCredentials.resident.password
-            ? 'resident'
-            : email === mockUserCredentials.provider.email &&
-                password === mockUserCredentials.provider.password
-              ? 'provider'
-              : null;
-        if (demoAccount) {
-          loginAsDemo(demoAccount);
-          return;
-        }
-      }
+      const { user, accessToken, token } = await loginUser({
+        email,
+        password,
+      });
 
-      const { user, accessToken, token } = await loginUser({ email, password });
       finishSignIn(user, accessToken ?? token);
     } catch (requestError: unknown) {
-      const responseMessage = axios.isAxiosError<{ message?: string }>(requestError)
+      const responseMessage = axios.isAxiosError<{ message?: string }>(
+        requestError,
+      )
         ? requestError.response?.data?.message
         : undefined;
+
       setError(
         responseMessage ??
           (requestError instanceof Error
             ? requestError.message
             : 'The request could not be completed. Please try again.'),
       );
+    } finally {
+      setIsSubmitting(false);
     }
   }
 
@@ -131,8 +128,8 @@ export default function AuthForm({ role, mode }: AuthFormProps) {
           <h2>{isRegister ? 'Create your account' : 'Welcome back'}</h2>
           <p>
             {isRegister
-              ? `Register as a ${roleName.toLowerCase()}.`
-              : `Sign in to your ${roleName.toLowerCase()}.`}
+              ? 'Create an account to get started with Skillz Directory.'
+              : 'Sign in to your Skillz Directory account.'}
           </p>
         </div>
 
@@ -158,6 +155,17 @@ export default function AuthForm({ role, mode }: AuthFormProps) {
                 autoComplete="tel"
                 required
               />
+
+              <label htmlFor="role">Account type (optional)</label>
+              <select id="role" name="role" defaultValue="">
+                <option value="">Select account type</option>
+                <option value="resident">Resident</option>
+                <option value="provider">Service Provider</option>
+              </select>
+              <p className="auth-field-hint">
+                If you do not select an account type, your account will be
+                registered as a resident.
+              </p>
             </>
           )}
 
@@ -218,26 +226,6 @@ export default function AuthForm({ role, mode }: AuthFormProps) {
             </div>
           )}
 
-          {!isRegister && USE_DEV_FIXTURES && (
-            <div className="auth-demo">
-              <p>Development test accounts</p>
-              <button
-                type="button"
-                className="auth-demo__button"
-                onClick={() => loginAsDemo('resident')}
-              >
-                Continue as demo resident
-              </button>
-              <button
-                type="button"
-                className="auth-demo__button"
-                onClick={() => loginAsDemo('provider')}
-              >
-                Continue as demo provider
-              </button>
-            </div>
-          )}
-
           {error && (
             <p className="auth-error" role="alert">
               {error}
@@ -250,8 +238,16 @@ export default function AuthForm({ role, mode }: AuthFormProps) {
             </p>
           )}
 
-          <button className="auth-submit" type="submit">
-            {isRegister ? 'Create account' : 'Sign in'}
+          <button
+            className="auth-submit"
+            type="submit"
+            disabled={isSubmitting}
+          >
+            {isSubmitting
+              ? 'Please wait...'
+              : isRegister
+                ? 'Create account'
+                : 'Sign in'}
           </button>
         </form>
 
@@ -260,16 +256,10 @@ export default function AuthForm({ role, mode }: AuthFormProps) {
             ? 'Already have an account?'
             : "Don't have an account?"}{' '}
 
-          <Link to={switchPath}>
+          <Link to={isRegister ? '/login' : '/register'}>
             {isRegister ? 'Sign in' : 'Create account'}
           </Link>
         </p>
-
-        {role && (
-          <p className="auth-role-note">
-            Account type: <strong>{roleName}</strong>
-          </p>
-        )}
       </section>
     </main>
   );
