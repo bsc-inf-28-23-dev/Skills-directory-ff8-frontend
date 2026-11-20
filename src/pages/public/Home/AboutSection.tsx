@@ -1,6 +1,16 @@
+import { useEffect } from "react";
 import "./AboutSection.css";
 
 export default function AboutSection() {
+  useEffect(() => {
+    if (window.location.hash === "#about-section") {
+      document.getElementById("about-section")?.scrollIntoView({
+        behavior: "smooth",
+        block: "start",
+      });
+    }
+  }, []);
+
   return (
     <section
       id="about-section"

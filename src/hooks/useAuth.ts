@@ -1,90 +1,76 @@
-import {
-  createContext,
-  createElement,
-  useCallback,
-  useContext,
-  useEffect,
-  useMemo,
-  useState,
-} from "react";
-import type { ReactNode } from "react";
-import { isAxiosError } from "axios";
+import { useCallback, useSyncExternalStore } from "react";
 import type { User } from "../types";
 import { USE_DEV_FIXTURES } from "../config/env";
-import api from "../services/api";
 
-interface AuthContextValue {
+interface AuthState {
   user: User | null;
   loading: boolean;
-  login: (email: string, password: string) => Promise<User>;
-  logout: () => Promise<void>;
-  setUser: (nextUser: User) => void;
+  logout: () => void;
+  setUser: (user: User, accessToken?: string) => void;
 }
 
-const AuthContext = createContext<AuthContextValue | null>(null);
+function readStoredUser(): User | null {
+  try {
+    const raw = localStorage.getItem("user");
+    if (!raw) return null;
 
-export function AuthProvider({ children }: { children: ReactNode }) {
-  const [user, setUserState] = useState<User | null>(null);
-  const [loading, setLoading] = useState(!USE_DEV_FIXTURES);
-
-  useEffect(() => {
-    if (USE_DEV_FIXTURES) return;
-
-    let active = true;
-
-    api
-      .get<User>("/auth/me")
-      .then(({ data }) => {
-        if (active) setUserState(data);
-      })
-      .catch((error: unknown) => {
-        if (isAxiosError(error) && error.response?.status !== 401) {
-          console.error("Could not verify the current session.", error);
-        }
-        if (active) setUserState(null);
-      })
-      .finally(() => {
-        if (active) setLoading(false);
-      });
-
-    return () => {
-      active = false;
-    };
-  }, []);
-
-  const login = useCallback(async (email: string, password: string) => {
-    const { data } = await api.post<User>("/auth/login", { email, password });
-    setUserState(data);
-    return data;
-  }, []);
-
-  const logout = useCallback(async () => {
-    try {
-      if (!USE_DEV_FIXTURES) {
-        await api.post("/auth/logout");
-      }
-    } finally {
-      setUserState(null);
-      localStorage.removeItem("token");
+    const savedUser = JSON.parse(raw) as User;
+    if (
+      !USE_DEV_FIXTURES &&
+      (savedUser.id.startsWith("dev-") ||
+        savedUser.email === "resident@test.com" ||
+        savedUser.email === "provider@test.com" ||
+        savedUser.email.endsWith("@example.invalid"))
+    ) {
+      localStorage.removeItem("user");
+      localStorage.removeItem("accessToken");
+      return null;
     }
-  }, []);
 
-  const setUser = useCallback((nextUser: User) => {
-    setUserState(nextUser);
-  }, []);
-
-  const value = useMemo(
-    () => ({ user, loading, login, logout, setUser }),
-    [user, loading, login, logout, setUser],
-  );
-
-  return createElement(AuthContext.Provider, { value }, children);
+    return savedUser;
+  } catch {
+    localStorage.removeItem("user");
+    localStorage.removeItem("accessToken");
+    return null;
+  }
 }
 
-export function useAuth() {
-  const context = useContext(AuthContext);
-  if (!context) {
-    throw new Error("useAuth must be used within an AuthProvider.");
-  }
-  return context;
+let currentUser = readStoredUser();
+const subscribers = new Set<() => void>();
+
+function subscribe(callback: () => void) {
+  subscribers.add(callback);
+  return () => subscribers.delete(callback);
+}
+
+function getSnapshot() {
+  return currentUser;
+}
+
+function notifySubscribers() {
+  subscribers.forEach((callback) => callback());
+}
+
+export function useAuth(): AuthState {
+  const user = useSyncExternalStore(subscribe, getSnapshot, getSnapshot);
+
+  const setUser = useCallback((next: User, accessToken?: string) => {
+    localStorage.setItem("user", JSON.stringify(next));
+    if (accessToken) {
+      localStorage.setItem("accessToken", accessToken);
+    } else {
+      localStorage.removeItem("accessToken");
+    }
+    currentUser = next;
+    notifySubscribers();
+  }, []);
+
+  const logout = useCallback(() => {
+    localStorage.removeItem("user");
+    localStorage.removeItem("accessToken");
+    currentUser = null;
+    notifySubscribers();
+  }, []);
+
+  return { user, loading: false, logout, setUser };
 }

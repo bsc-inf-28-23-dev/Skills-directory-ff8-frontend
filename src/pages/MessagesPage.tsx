@@ -137,6 +137,7 @@ export default function MessagesPage() {
           <ChatWindow
             myRole={myRole}
             myId={user.id}
+            otherPartyId={activeConv.otherPartyId}
             otherPartyName={activeConv.otherPartyName}
             messages={messages}
             onSend={handleSend}

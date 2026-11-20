@@ -9,61 +9,72 @@ import {
 import { Link, Navigate } from "react-router-dom";
 import ErrorAlert from "../../components/ErrorAlert";
 import Eyebrow from "../../components/Eyebrow";
-import { providers } from "../../data/provider";
+import LoadingSpinner from "../../components/LoadingSpinner";
+import { categories } from "../../data/provider";
 import { useAuth } from "../../hooks/useAuth";
 import {
   createProviderProfile,
   getProviderProfileRouteId,
 } from "../../data/providerAccount";
-import { loadProviders } from "../../data/providerStorage";
+import type { User } from "../../types";
 import type { ServiceProvider } from "../../types/serviceProvider";
+import { getProviders, providerService } from "../../services/providerService";
 import "./ProviderDashboardPage.css";
-
-const defaultProvider =
-  providers.find((provider) => provider.id === "rapid-flow") ?? providers[0];
 
 export default function ProviderDashboardPage() {
   const { user } = useAuth();
   const providerProfileId = getProviderProfileRouteId(user);
-  const [provider, setProvider] = useState<ServiceProvider>(() =>
-    user?.role === "provider" && providerProfileId !== defaultProvider.id
-      ? createProviderProfile(user, [defaultProvider.category], providerProfileId)
-      : defaultProvider,
-  );
+  const [provider, setProvider] = useState<ServiceProvider | null>(null);
+  const [loading, setLoading] = useState(true);
   const [error, setError] = useState("");
 
   useEffect(() => {
-    if (user?.role !== "provider") return;
-
     let isCurrent = true;
 
-    loadProviders()
-      .then((savedProviders) => {
-        if (!isCurrent || !savedProviders) return;
+    async function loadProfile(currentUser: User) {
+      setLoading(true);
+      setError("");
+      try {
+        const [providers, profile] = await Promise.all([
+          getProviders(),
+          providerService.getMyProfile(),
+        ]);
+        if (!isCurrent) return;
 
-        const savedProfile = savedProviders.find(
-          (item) => item.id === providerProfileId,
-        );
-        if (savedProfile) {
-          setProvider(savedProfile);
-          setError("");
-        } else if (providerProfileId === user.id) {
-          setProvider(createProviderProfile(user, [defaultProvider.category]));
-          setError("");
-        } else {
-          setError(
-            "Your saved service profile could not be found. The sample profile is shown instead.",
+        const base =
+          providers.find((item) => item.id === profile.id) ??
+          providers.find((item) => item.id === providerProfileId) ??
+          createProviderProfile(
+            currentUser,
+            categories,
+            profile.id || providerProfileId || currentUser.id,
           );
-        }
-      })
-      .catch((loadError: unknown) => {
+        setProvider({
+          ...base,
+          id: profile.id || base.id,
+          name: profile.businessName || base.name,
+          person: profile.contactPerson || base.person,
+          category: profile.category || base.category,
+          area: profile.serviceArea || base.area,
+          quote: profile.about || base.quote,
+          rating: profile.rating ?? base.rating,
+          reviews: profile.reviewCount ?? base.reviews,
+          services:
+            base.services.length > 0 ? base.services : profile.skills ?? [],
+        });
+      } catch (loadError: unknown) {
         console.error("Could not load the provider dashboard profile.", loadError);
         if (isCurrent) {
           setError(
-            "Your saved service profile could not be loaded. The sample profile is shown instead.",
+            "Your provider dashboard could not load from the server. Check your connection and try again.",
           );
         }
-      });
+      } finally {
+        if (isCurrent) setLoading(false);
+      }
+    }
+
+    if (user?.role === "provider") void loadProfile(user);
 
     return () => {
       isCurrent = false;
@@ -88,6 +99,7 @@ export default function ProviderDashboardPage() {
     <main className="provider-dashboard">
       <div className="provider-dashboard__container">
         {error && <ErrorAlert message={error} />}
+        {loading && <LoadingSpinner label="Loading your provider dashboard..." />}
 
         <section className="provider-dashboard__welcome">
           <div>
@@ -111,69 +123,70 @@ export default function ProviderDashboardPage() {
           </div>
         </section>
 
-        <section className="provider-dashboard__overview" aria-label="Provider overview">
-          <article className="provider-dashboard__card provider-dashboard__service-summary">
-            <span className="provider-dashboard__icon" aria-hidden="true">
-              <BriefcaseBusiness size={21} />
-            </span>
-            <p className="eyebrow">Your listing</p>
-            <h2>{provider.name}</h2>
-            <p className="provider-dashboard__meta">
-              {provider.category} <span aria-hidden="true">·</span>{" "}
-              <MapPin size={14} aria-hidden="true" /> {provider.area}
-            </p>
-            <div className="provider-dashboard__service-count">
-              <strong>{provider.services.length}</strong>
-              <span>
-                listed {provider.services.length === 1 ? "service" : "services"}
-              </span>
-            </div>
-            <Link to="/provider/services">
-              Edit your listing <ArrowRight size={15} aria-hidden="true" />
-            </Link>
-          </article>
-
-          <Link
-            to="/provider/messages"
-            className="provider-dashboard__card provider-dashboard__messages-card"
-          >
-            <span className="provider-dashboard__icon" aria-hidden="true">
-              <MessageCircle size={21} />
-            </span>
-            <p className="eyebrow">Stay connected</p>
-            <h2>Messages</h2>
-            <p>Read resident enquiries and continue your conversations.</p>
-            <span className="provider-dashboard__card-link">
-              Open messages <ArrowRight size={15} aria-hidden="true" />
-            </span>
-          </Link>
-        </section>
-
-        <section className="provider-dashboard__services" aria-labelledby="provider-services-heading">
-          <header>
-            <div>
-              <p className="eyebrow">What you offer</p>
-              <h2 id="provider-services-heading">My services</h2>
-            </div>
-            <Link
-              to="/provider/services"
-              className="btn btn-trade"
-            >
-              Edit services
-            </Link>
-          </header>
-          <ul>
-            {provider.services.map((service) => (
-              <li key={service}>
-                <span className="provider-dashboard__service-check" aria-hidden="true">
-                  <BriefcaseBusiness size={15} />
+        {provider && (
+          <>
+            <section className="provider-dashboard__overview" aria-label="Provider overview">
+              <article className="provider-dashboard__card provider-dashboard__service-summary">
+                <span className="provider-dashboard__icon" aria-hidden="true">
+                  <BriefcaseBusiness size={21} />
                 </span>
-                <span>{service}</span>
-                <ArrowRight size={15} aria-hidden="true" />
-              </li>
-            ))}
-          </ul>
-        </section>
+                <p className="eyebrow">Your listing</p>
+                <h2>{provider.name}</h2>
+                <p className="provider-dashboard__meta">
+                  {provider.category} <span aria-hidden="true">·</span>{" "}
+                  <MapPin size={14} aria-hidden="true" /> {provider.area}
+                </p>
+                <div className="provider-dashboard__service-count">
+                  <strong>{provider.services.length}</strong>
+                  <span>
+                    listed {provider.services.length === 1 ? "service" : "services"}
+                  </span>
+                </div>
+                <Link to="/provider/services">
+                  Edit your listing <ArrowRight size={15} aria-hidden="true" />
+                </Link>
+              </article>
+
+              <Link
+                to="/provider/messages"
+                className="provider-dashboard__card provider-dashboard__messages-card"
+              >
+                <span className="provider-dashboard__icon" aria-hidden="true">
+                  <MessageCircle size={21} />
+                </span>
+                <p className="eyebrow">Stay connected</p>
+                <h2>Messages</h2>
+                <p>Read resident enquiries and continue your conversations.</p>
+                <span className="provider-dashboard__card-link">
+                  Open messages <ArrowRight size={15} aria-hidden="true" />
+                </span>
+              </Link>
+            </section>
+
+            <section className="provider-dashboard__services" aria-labelledby="provider-services-heading">
+              <header>
+                <div>
+                  <p className="eyebrow">What you offer</p>
+                  <h2 id="provider-services-heading">My services</h2>
+                </div>
+                <Link to="/provider/services" className="btn btn-trade">
+                  Edit services
+                </Link>
+              </header>
+              <ul>
+                {provider.services.map((service) => (
+                  <li key={service}>
+                    <span className="provider-dashboard__service-check" aria-hidden="true">
+                      <BriefcaseBusiness size={15} />
+                    </span>
+                    <span>{service}</span>
+                    <ArrowRight size={15} aria-hidden="true" />
+                  </li>
+                ))}
+              </ul>
+            </section>
+          </>
+        )}
       </div>
     </main>
   );

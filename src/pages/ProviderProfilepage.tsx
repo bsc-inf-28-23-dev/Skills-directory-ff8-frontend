@@ -1,257 +1,444 @@
-import { useState, useEffect, type FormEvent } from "react";
-import { providerService } from "../services/providerService";
-import Eyebrow from "../components/Eyebrow";
 
-export default function ProviderProfilePage() {
-  const [loading, setLoading] = useState(true);
+import { useState } from "react";
+import type { FormEvent } from "react";
+import type { ServiceProvider } from "../types/serviceProvider";
+
+interface ProviderForm {
+  name: string;
+  person: string;
+  category: string;
+  area: string;
+  quote: string;
+  services: string;
+}
+
+interface ProviderDraft {
+  provider: ServiceProvider;
+  form: ProviderForm;
+  photoPreview: string;
+  photoLoadFailed: boolean;
+}
+
+interface ProviderProfilePageProps {
+  provider: ServiceProvider;
+  providers: ServiceProvider[];
+  categories: string[];
+  onBack: () => void;
+  onSave: (updatedProvider: ServiceProvider) => Promise<boolean>;
+  onSelectProvider: (providerId: string) => void;
+}
+
+function createDraft(provider: ServiceProvider): ProviderDraft {
+  return {
+    provider,
+    form: {
+      name: provider.name,
+      person: provider.person,
+      category: provider.category,
+      area: provider.area,
+      quote: provider.quote,
+      services: provider.services.join(", "),
+    },
+    photoPreview: provider.photo ?? "",
+    photoLoadFailed: false,
+  };
+}
+
+export default function ProviderProfilePage({
+  provider,
+  providers,
+  categories,
+  onBack,
+  onSave,
+  onSelectProvider,
+}: ProviderProfilePageProps) {
+  const [draft, setDraft] = useState(() => createDraft(provider));
+  const currentDraft =
+    draft.provider === provider ? draft : createDraft(provider);
+  const { form, photoPreview, photoLoadFailed } = currentDraft;
+  const [savedProvider, setSavedProvider] =
+    useState<ServiceProvider | null>(null);
   const [saving, setSaving] = useState(false);
-  const [saved, setSaved] = useState(false);
-  const [errorMsg, setErrorMsg] = useState("");
+  const [photoError, setPhotoError] = useState("");
 
-  // The form state matching your teammate's layout
-  const [form, setForm] = useState({
-    name: "",
-    person: "",
-    category: "",
-    area: "",
-    quote: "",
-    services: "",
-  });
+  function handlePhotoChange(file?: File) {
+    setPhotoError("");
 
-  const [photoPreview, setPhotoPreview] = useState("");
-  const [photoLoadFailed, setPhotoLoadFailed] = useState(false);
+    if (!file) return;
 
-  // 1. Fetch real data from the backend on load
-  useEffect(() => {
-    async function loadData() {
-      try {
-        const data = await providerService.getMyProfile();
-        setForm({
-          name: data.businessName || "",
-          person: data.contactPerson || "",
-          category: data.category || "",
-          area: data.serviceArea || "",
-          quote: data.about || "",
-          services: (data.skills || []).join(", "),
-        });
-        setPhotoPreview(data.photoUrl || "");
-      } catch (err) {
-        console.error(err);
-        setErrorMsg("Failed to load your profile. Ensure you are logged in as a Provider.");
-      } finally {
-        setLoading(false);
-      }
+    if (!file.type.startsWith("image/")) {
+      setPhotoError("Please choose an image file.");
+      return;
     }
-    loadData();
-  }, []);
 
-  function updateField(field: keyof typeof form, value: string) {
-    setForm((current) => ({ ...current, [field]: value }));
-    setSaved(false);
+    if (file.size > 5 * 1024 * 1024) {
+      setPhotoError("Your image must be 5 MB or smaller.");
+      return;
+    }
+
+    const reader = new FileReader();
+
+    reader.onload = () => {
+      const result = reader.result;
+      if (typeof result === "string") {
+        setDraft((current) =>
+          current.provider === provider
+            ? { ...current, photoPreview: result, photoLoadFailed: false }
+            : current,
+        );
+        setSavedProvider(null);
+      }
+    };
+
+    reader.onerror = () => {
+      setPhotoError("We couldn't read that image. Please try again.");
+    };
+
+    reader.readAsDataURL(file);
+  }
+
+  function updateField(field: keyof ProviderForm, value: string) {
+    setDraft({
+      ...currentDraft,
+      form: { ...form, [field]: value },
+    });
+    setSavedProvider(null);
   }
 
   async function handleSubmit(event: FormEvent<HTMLFormElement>) {
     event.preventDefault();
     setSaving(true);
-    setErrorMsg("");
+
+    const updatedProvider: ServiceProvider = {
+      ...provider,
+      name: form.name.trim(),
+      person: form.person.trim(),
+      category: form.category,
+      area: form.area.trim(),
+      quote: form.quote.trim(),
+      services: form.services
+        .split(",")
+        .map((service) => service.trim())
+        .filter(Boolean),
+      photo: photoPreview || undefined,
+    };
 
     try {
-      // Split the comma-separated services into an array for the backend
-      const skillsArray = form.services
-        .split(",")
-        .map((s) => s.trim())
-        .filter(Boolean);
-
-      // Send the PATCH request to update the profile
-      await providerService.updateMyProfile({
-        businessName: form.name.trim(),
-        contactPerson: form.person.trim(),
-        category: form.category,
-        serviceArea: form.area.trim(),
-        about: form.quote.trim(),
-      });
-
-      // Send the PUT request to update skills (as per your Swagger UI)
-      await providerService.updateMySkills(skillsArray);
-
-      setSaved(true);
-    } catch (error) {
-      console.error("Could not save provider profile.", error);
-      setErrorMsg("Failed to save changes. Please try again.");
+        setSavedProvider((await onSave(updatedProvider)) ? updatedProvider : null);
     } finally {
       setSaving(false);
     }
   }
 
-  if (loading) return <div className="p-5 text-center">Loading profile...</div>;
-
   return (
     <main className="profile-page">
       <div className="page-container">
-        
-        <header className="mb-5">
-          <Eyebrow>Provider Workspace</Eyebrow>
-          <h1 className="display-heading display-heading-lg mb-3">
-            Manage your <span className="text-primary">profile.</span>
-          </h1>
-          <p className="text-muted-ink" style={{ maxWidth: 600 }}>
-            Keep your details accurate so customers know who you are, what you do, and where you work.
-          </p>
-        </header>
+        <div className="profile-heading">
+          <div>
+            <p className="profile-eyebrow">PROVIDER WORKSPACE</p>
+            <h1 className="profile-title">Manage your profile.</h1>
+            <p className="profile-description">
+              Keep your details accurate so customers know who you are,
+              what you do, and where you work.
+            </p>
+          </div>
 
-        {errorMsg && <div className="alert alert-danger mb-4">{errorMsg}</div>}
+          <div className="profile-status">
+            <span className="profile-status-dot" />
+            Local editor
+          </div>
+        </div>
 
-        <div className="row g-5">
-          {/* LEFT COLUMN: The Form */}
-          <div className="col-12 col-lg-7">
-            <form className="surface-box p-4 p-md-5" onSubmit={handleSubmit}>
-              <h2 className="section-label mb-4">Basic Information</h2>
+        <div className="profile-provider-select">
+          <label htmlFor="profile-provider">Editing provider</label>
+          <select
+            id="profile-provider"
+            className="form-select"
+            value={provider.id}
+            onChange={(event) => onSelectProvider(event.target.value)}
+          >
+            {providers.map((item) => (
+              <option key={item.id} value={item.id}>
+                {item.name}
+              </option>
+            ))}
+          </select>
+        </div>
 
-              {/* Profile Picture */}
-              <div className="d-flex align-items-center gap-3 mb-4 pb-4 border-bottom">
-                <div 
-                  className="d-flex align-items-center justify-content-center bg-dark text-white" 
-                  style={{ width: 80, height: 80, fontSize: 32, borderRadius: 4, overflow: "hidden" }}
-                >
+        <div className="profile-layout">
+          <form className="profile-form" onSubmit={handleSubmit}>
+            <section className="profile-panel">
+              <div className="profile-panel-heading">
+                <span className="profile-step">01</span>
+                <div>
+                  <h2>Basic information</h2>
+                  <p>Introduce yourself and your business.</p>
+                </div>
+              </div>
+
+              <div className="profile-photo-section">
+                <div className="profile-photo-preview">
                   {photoPreview && !photoLoadFailed ? (
                     <img
                       src={photoPreview}
-                      alt=""
-                      onError={() => setPhotoLoadFailed(true)}
-                      style={{ width: "100%", height: "100%", objectFit: "cover" }}
+                      alt="Your profile"
+                      onError={() =>
+                        setDraft((current) =>
+                          current.provider === provider
+                            ? { ...current, photoLoadFailed: true }
+                            : current,
+                        )
+                      }
                     />
                   ) : (
-                    <span>{form.name.trim().charAt(0).toUpperCase() || "P"}</span>
+                    <span>
+                      {form.name.trim().charAt(0).toUpperCase() || "S"}
+                    </span>
                   )}
                 </div>
-                <div>
-                  <h3 className="h6 mb-1">Profile picture</h3>
-                  <p className="small text-muted-ink mb-0">Image upload will be connected in the next sprint.</p>
+
+                <div className="profile-photo-controls">
+                  <h3>Profile picture</h3>
+                  <p>
+                    Add a clear photo or business logo so customers can
+                    recognize you.
+                  </p>
+
+                  <label
+                    htmlFor="provider-photo"
+                    className="btn-provider-outline"
+                  >
+                    Upload picture
+                  </label>
+
+                  <input
+                    id="provider-photo"
+                    className="profile-photo-input"
+                    type="file"
+                    accept="image/*"
+                    onChange={(event) => {
+                      handlePhotoChange(event.target.files?.[0]);
+                      event.target.value = "";
+                    }}
+                  />
+
+                  {photoPreview && (
+                    <button
+                      type="button"
+                      className="profile-photo-remove"
+                      onClick={() => {
+                        setDraft({
+                          ...currentDraft,
+                          photoPreview: "",
+                          photoLoadFailed: false,
+                        });
+                        setPhotoError("");
+                        setSavedProvider(null);
+                      }}
+                    >
+                      Remove picture
+                    </button>
+                  )}
+
+                  <small>Images only · Maximum file size: 5 MB</small>
+
+                  {photoError && (
+                    <p className="profile-photo-error" role="alert">
+                      {photoError}
+                    </p>
+                  )}
                 </div>
               </div>
 
-              <div className="row g-4">
-                <div className="col-12 col-md-6">
-                  <div className="form-field">
-                    <label>Business name</label>
-                    <input
-                      className="form-control"
-                      value={form.name}
-                      onChange={(e) => updateField("name", e.target.value)}
-                      required
-                    />
-                  </div>
+              <div className="profile-fields">
+                <div className="profile-field">
+                  <label htmlFor="provider-name">Business name</label>
+                  <input
+                    id="provider-name"
+                    className="form-control"
+                    value={form.name}
+                    onChange={(e) => updateField("name", e.target.value)}
+                    required
+                  />
                 </div>
 
-                <div className="col-12 col-md-6">
-                  <div className="form-field">
-                    <label>Contact person</label>
-                    <input
-                      className="form-control"
-                      value={form.person}
-                      onChange={(e) => updateField("person", e.target.value)}
-                      required
-                    />
-                  </div>
+                <div className="profile-field">
+                  <label htmlFor="provider-person">Contact person</label>
+                  <input
+                    id="provider-person"
+                    className="form-control"
+                    value={form.person}
+                    onChange={(e) => updateField("person", e.target.value)}
+                    required
+                  />
                 </div>
 
-                <div className="col-12 col-md-6">
-                  <div className="form-field">
-                    <label>Main category</label>
-                    <input
-                      className="form-control"
-                      value={form.category}
-                      onChange={(e) => updateField("category", e.target.value)}
-                      required
-                    />
-                  </div>
+                <div className="profile-field">
+                  <label htmlFor="provider-category">Main category</label>
+                  <select
+                    id="provider-category"
+                    className="form-select"
+                    value={form.category}
+                    onChange={(e) => updateField("category", e.target.value)}
+                    required
+                  >
+                    {!categories.includes(form.category) && (
+                      <option value={form.category}>{form.category}</option>
+                    )}
+                    {categories.map((item) => (
+                      <option key={item} value={item}>
+                        {item}
+                      </option>
+                    ))}
+                  </select>
                 </div>
 
-                <div className="col-12 col-md-6">
-                  <div className="form-field">
-                    <label>Service area</label>
-                    <input
-                      className="form-control"
-                      value={form.area}
-                      onChange={(e) => updateField("area", e.target.value)}
-                      placeholder="e.g. Zomba, Malawi"
-                      required
-                    />
-                  </div>
+                <div className="profile-field">
+                  <label htmlFor="provider-area">Service area</label>
+                  <input
+                    id="provider-area"
+                    className="form-control"
+                    value={form.area}
+                    onChange={(e) => updateField("area", e.target.value)}
+                    placeholder="e.g. Zomba, Malawi"
+                    required
+                  />
+                  <small>
+                    The map pin is a sample location and does not update from
+                    this field.
+                  </small>
                 </div>
 
-                <div className="col-12">
-                  <div className="form-field">
-                    <label>Services offered</label>
-                    <textarea
-                      className="form-control"
-                      rows={3}
-                      value={form.services}
-                      onChange={(e) => updateField("services", e.target.value)}
-                      placeholder="Plumbing, Pipe Repair, Installation"
-                      required
-                    />
-                    <div className="form-text">Separate each service with a comma.</div>
-                  </div>
+                <div className="profile-field profile-field-full">
+                  <label htmlFor="provider-services">
+                    Services offered
+                  </label>
+                  <textarea
+                    id="provider-services"
+                    className="form-control"
+                    rows={3}
+                    value={form.services}
+                    onChange={(e) => updateField("services", e.target.value)}
+                    placeholder="Separate services with commas"
+                    required
+                  />
+                  <small>
+                    Separate each service with a comma.
+                  </small>
                 </div>
 
-                <div className="col-12">
-                  <div className="form-field">
-                    <label>About your business</label>
-                    <textarea
-                      className="form-control"
-                      rows={4}
-                      value={form.quote}
-                      onChange={(e) => updateField("quote", e.target.value)}
-                      placeholder="Describe your experience and the work you do."
-                    />
-                  </div>
+                <div className="profile-field profile-field-full">
+                  <label htmlFor="provider-quote">
+                    About your business
+                  </label>
+                  <textarea
+                    id="provider-quote"
+                    className="form-control"
+                    rows={4}
+                    value={form.quote}
+                    onChange={(e) => updateField("quote", e.target.value)}
+                    placeholder="Describe your experience and the work you do."
+                  />
                 </div>
               </div>
 
-              <div className="mt-5 pt-4 border-top d-flex align-items-center gap-3">
-                <button type="submit" className="btn btn-athletic" disabled={saving}>
-                  {saving ? "Saving..." : "Save Changes"}
-                </button>
-                {saved && <span className="text-success fw-bold small">✓ Profile saved to database!</span>}
+              <div className="profile-form-footer">
+                {savedProvider === provider && (
+                  <p className="profile-saved-message" role="status">
+                    ✓ Profile changes saved in this browser.
+                  </p>
+                )}
+
+                <div className="profile-form-actions">
+                  <button
+                    type="button"
+                    className="btn-brand"
+                    onClick={onBack}
+                  >
+                    Service Listing
+                  </button>
+                  <button type="submit" className="btn-brand" disabled={saving}>
+                    {saving ? "Saving..." : "Save changes"}
+                  </button>
+                </div>
               </div>
-            </form>
-          </div>
+            </section>
+          </form>
 
-          {/* RIGHT COLUMN: Live Preview */}
-          <div className="col-12 col-lg-5">
-            <aside className="surface-box p-4 sticky-top" style={{ top: 100 }}>
-              <h2 className="section-label">Customer Preview</h2>
-              <p className="text-muted-ink small mb-4">This is how residents will see your business.</p>
+          <aside className="profile-preview">
+            <p className="profile-eyebrow">CUSTOMER PREVIEW</p>
+            <h2>Your public profile</h2>
+            <p className="profile-preview-hint">
+              This preview updates as you edit your details.
+            </p>
 
-              <div className="p-4 bg-light border rounded">
-                <span className="badge text-bg-primary mb-2 text-uppercase">
-                  {form.category || "Service Provider"}
+            <div className="profile-preview-card">
+              <div className="profile-preview-cover">
+                {photoPreview && !photoLoadFailed ? (
+                  <img
+                    className="profile-avatar profile-avatar-image"
+                    src={photoPreview}
+                    alt={`${form.name || "Provider"} profile`}
+                    onError={() =>
+                      setDraft((current) =>
+                        current.provider === provider
+                          ? { ...current, photoLoadFailed: true }
+                          : current,
+                      )
+                    }
+                  />
+                ) : (
+                  <span className="profile-avatar">
+                    {form.name.trim().charAt(0).toUpperCase() || "S"}
+                  </span>
+                )}
+              </div>
+
+              <div className="profile-preview-body">
+                <span className="profile-category">
+                  {form.category || "Service provider"}
                 </span>
 
-                <h3 className="display-heading display-heading-md mb-1">
-                  {form.name || "Your business name"}
-                </h3>
-                <p className="text-muted-ink mb-2">
-                  {form.person || "Contact person"} · {form.area || "Your service area"}
+                <h3>{form.name || "Your business name"}</h3>
+                <p className="profile-preview-person">
+                  {form.person || "Contact person"}
                 </p>
+
+                <p className="profile-preview-location">
+                  <span aria-hidden="true">⌖</span>{" "}
+                  {form.area || "Your service area"}
+                </p>
+
+                <div className="profile-preview-rating">
+                  <span>★ {provider.rating.toFixed(1)}</span>
+                  <span>{provider.reviews} reviews</span>
+                </div>
 
                 <hr />
 
-                <h4 className="section-label mt-4">Services</h4>
-                <div className="d-flex flex-wrap gap-2 mb-4">
-                  {form.services.split(",").map(s => s.trim()).filter(Boolean).map(s => (
-                    <span key={s} className="badge text-bg-light border text-dark">{s}</span>
-                  ))}
+                <h4>Services</h4>
+                <div className="profile-service-tags">
+                  {form.services
+                    .split(",")
+                    .map((service) => service.trim())
+                    .filter(Boolean)
+                    .map((service) => (
+                      <span key={service}>{service}</span>
+                    ))}
                 </div>
 
-                <h4 className="section-label">About</h4>
-                <p className="small text-muted-ink mb-0">
+                <h4 className="mt-4">About</h4>
+                <p className="profile-preview-about">
                   {form.quote || "Your business description will appear here."}
                 </p>
               </div>
-            </aside>
-          </div>
+            </div>
+
+            <p className="profile-preview-note">
+              Ratings and reviews are provided by customers and cannot be
+              edited here.
+            </p>
+          </aside>
         </div>
       </div>
     </main>

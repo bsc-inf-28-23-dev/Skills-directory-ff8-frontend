@@ -1,26 +1,35 @@
 import { lazy, Suspense, type ReactNode } from "react";
-import { BrowserRouter, Navigate, Route, Routes, useLocation } from "react-router-dom";
+import {
+  BrowserRouter,
+  Navigate,
+  Route,
+  Routes,
+  useLocation,
+} from "react-router-dom";
 import AppNavigation from "./components/AppNavigation";
-import { AuthProvider, useAuth } from "./hooks/useAuth";
 import { getProviderProfileRouteId } from "./data/providerAccount";
+import { useAuth } from "./hooks/useAuth";
+import type { User } from "./types";
 import AdminDashboardPage from "./pages/AdminDashboardPage";
 import AdminProfilePage from "./pages/AdminProfilePage";
+import ChangePassword from "./pages/ChangePassword/ChangePassword";
+import MessagesPage from "./pages/MessagesPage";
+import ProviderReviewsPage from "./pages/ProviderReviewsPage";
+import ResidentDashboardPage from "./pages/ResidentDashboardPage";
+import ResidentProfilePage from "./pages/ResidentProfilePage";
 import AboutPage from "./pages/public/AboutPage";
 import ForgotPassword from "./pages/public/ForgotPassword/ForgotPassword";
 import Login from "./pages/public/Login/Login";
 import Register from "./pages/public/Register/Register";
-import MessagesPage from "./pages/MessagesPage";
-import ResidentDashboardPage from "./pages/ResidentDashboardPage";
-import ResidentProfilePage from "./pages/ResidentProfilePage";
-import ResidentLogin from "./pages/resident/ResidentLogin";
-import ResidentRegister from "./pages/resident/ResidentRegister";
 import ProviderLogin from "./pages/provider/ProviderLogin";
 import ProviderRegister from "./pages/provider/ProviderRegister";
 import ProviderDashboardPage from "./pages/provider/ProviderDashboardPage";
-import ProviderReviewsPage from "./pages/ProviderReviewsPage";
 import ProviderServicesPage from "./pages/provider/Services/ProviderServicesPage";
+import ResidentLogin from "./pages/resident/ResidentLogin";
+import ResidentRegister from "./pages/resident/ResidentRegister";
 
-type UserRole = "resident" | "provider" | "admin";
+type UserRole = User["role"];
+
 const ServiceDirectoryApp = lazy(() => import("./pages/ServiceDirectoryApp"));
 
 function ServiceDirectoryRoute() {
@@ -32,40 +41,39 @@ function ServiceDirectoryRoute() {
 }
 
 function HomeRoute() {
-  const { user, loading } = useAuth();
+  const { user } = useAuth();
 
-  if (loading) return null;
-  if (user?.role === "provider") return <Navigate to="/provider/dashboard" replace />;
-  if (user?.role === "admin") return <Navigate to="/admin/dashboard" replace />;
+  if (user?.role === "provider") {
+    return <Navigate to="/provider/dashboard" replace />;
+  }
+
+  if (user?.role === "admin") {
+    return <Navigate to="/admin/dashboard" replace />;
+  }
 
   return <ServiceDirectoryRoute />;
 }
 
-function ProviderProfileRoute() {
+function RoleRoute({
+  role,
+  children,
+}: {
+  role: UserRole;
+  children: ReactNode;
+}) {
   const { user } = useAuth();
-  const profileId = getProviderProfileRouteId(user);
-  return profileId ? (
-    <Navigate to={`/provider/profile/${encodeURIComponent(profileId)}`} replace />
-  ) : (
-    <ServiceDirectoryRoute />
-  );
-}
-
-function RoleRoute({ role, children }: { role: UserRole; children: ReactNode }) {
-  const { user, loading } = useAuth();
   const location = useLocation();
 
-  if (loading) return null;
   if (!user) {
-    const loginPath = role === "provider" ? "/provider/login" : "/login";
     return (
       <Navigate
-        to={loginPath}
+        to={role === "provider" ? "/provider/login" : "/login"}
         replace
         state={{ from: `${location.pathname}${location.search}` }}
       />
     );
   }
+
   if (user.role !== role) {
     const destination =
       user.role === "provider"
@@ -73,26 +81,72 @@ function RoleRoute({ role, children }: { role: UserRole; children: ReactNode }) 
         : user.role === "admin"
           ? "/admin/dashboard"
           : "/resident/dashboard";
+
     return <Navigate to={destination} replace />;
   }
 
   return children;
 }
 
-function AppRoutes() {
+function ProviderProfileRoute() {
+  const { user } = useAuth();
+  const profileId = getProviderProfileRouteId(user);
+
+  return profileId ? (
+    <Navigate
+      to={`/provider/profile/${encodeURIComponent(profileId)}`}
+      replace
+    />
+  ) : (
+    <ServiceDirectoryRoute />
+  );
+}
+
+function ChangePasswordRoute() {
+  const { user } = useAuth();
+
+  if (!user) {
+    return <Navigate to="/login" replace />;
+  }
+
+  if (user.role === "admin") {
+    return <Navigate to="/admin/dashboard" replace />;
+  }
+
+  return <ChangePassword />;
+}
+
+function AppContent() {
+  const location = useLocation();
+  const hideNavigation = location.pathname === "/change-password";
+
   return (
     <>
-      <AppNavigation />
+      {!hideNavigation && <AppNavigation />}
+
       <Routes>
         <Route path="/" element={<HomeRoute />} />
         <Route path="/about" element={<AboutPage />} />
-        <Route path="/services" element={<Navigate to="/#services" replace />} />
-        <Route path="/services/providers/:providerId" element={<ServiceDirectoryRoute />} />
-        <Route path="/services/*" element={<Navigate to="/#services" replace />} />
+        <Route
+          path="/services"
+          element={<Navigate to="/#services" replace />}
+        />
+        <Route
+          path="/services/providers/:providerId"
+          element={<ServiceDirectoryRoute />}
+        />
+        <Route
+          path="/services/*"
+          element={<Navigate to="/#services" replace />}
+        />
 
         <Route path="/login" element={<Login />} />
         <Route path="/register" element={<Register />} />
         <Route path="/forgot-password" element={<ForgotPassword />} />
+        <Route
+          path="/change-password"
+          element={<ChangePasswordRoute />}
+        />
         <Route path="/resident/login" element={<ResidentLogin />} />
         <Route path="/resident/register" element={<ResidentRegister />} />
         <Route path="/provider/login" element={<ProviderLogin />} />
@@ -236,18 +290,19 @@ function AppRoutes() {
             </RoleRoute>
           }
         />
+
         <Route path="*" element={<Navigate to="/" replace />} />
       </Routes>
     </>
   );
 }
 
-export default function App() {
+function App() {
   return (
-    <AuthProvider>
-      <BrowserRouter>
-        <AppRoutes />
-      </BrowserRouter>
-    </AuthProvider>
+    <BrowserRouter>
+      <AppContent />
+    </BrowserRouter>
   );
 }
+
+export default App;

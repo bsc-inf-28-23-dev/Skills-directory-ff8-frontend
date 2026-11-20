@@ -1,3 +1,4 @@
+
 import { useEffect, useState } from "react";
 import type { LucideIcon } from "lucide-react";
 import {
@@ -6,6 +7,7 @@ import {
   BriefcaseBusiness,
   Home,
   Info,
+  KeyRound,
   LogOut,
   MessageCircle,
   Search,
@@ -43,6 +45,7 @@ export default function AppNavigation() {
 
   useEffect(() => {
     let active = true;
+
     async function loadUnreadCount() {
       try {
         const conversations = await getConversations();
@@ -50,6 +53,7 @@ export default function AppNavigation() {
           (count, conversation) => count + (conversation.unreadCount || 0),
           0,
         );
+
         if (active) setUnreadCount(total);
       } catch (error) {
         console.error("Could not load unread message count.", error);
@@ -69,7 +73,12 @@ export default function AppNavigation() {
   const links: NavigationLink[] =
     user?.role === "provider"
       ? [
-          { label: "Dashboard", to: "/provider/dashboard", end: true, icon: Home },
+          {
+            label: "Dashboard",
+            to: "/provider/dashboard",
+            end: true,
+            icon: Home,
+          },
           {
             label: "My Services",
             to: "/provider/services",
@@ -86,21 +95,50 @@ export default function AppNavigation() {
             to: `/provider/profile/${profileId ?? user.id}`,
             icon: UserRound,
           },
+          {
+            label: "Change Password",
+            to: "/change-password",
+            icon: KeyRound,
+          },
         ]
       : user?.role === "resident"
         ? [
-            { label: "Home", to: "/resident/dashboard", end: true, icon: Home },
-            { label: "Explore Services", to: "/#services", icon: Search },
-            { label: "Saved services", to: "/resident/saved", icon: Bookmark },
+            {
+              label: "Home",
+              to: "/resident/dashboard",
+              end: true,
+              icon: Home,
+            },
+            {
+              label: "Explore Services",
+              to: "/#services",
+              icon: Search,
+            },
+            {
+              label: "Saved services",
+              to: "/resident/saved",
+              icon: Bookmark,
+            },
             {
               label: "Messages",
               to: "/resident/messages",
               icon: MessageCircle,
               active: messagesActive,
             },
+            {
+              label: "Change Password",
+              to: "/change-password",
+              icon: KeyRound,
+            },
           ]
         : user?.role === "admin"
-          ? [{ label: "Admin dashboard", to: "/admin/dashboard", icon: Home }]
+          ? [
+              {
+                label: "Admin dashboard",
+                to: "/admin/dashboard",
+                icon: Home,
+              },
+            ]
           : [
               { label: "Home", to: "/", end: true, icon: Home },
               { label: "About", to: "/about", icon: Info },
@@ -109,6 +147,7 @@ export default function AppNavigation() {
   async function handleLogout() {
     setMenuOpen(false);
     let errorMessage = "";
+
     try {
       await logout();
     } catch (error) {
@@ -145,6 +184,7 @@ export default function AppNavigation() {
         <span className="app-navigation__mark" aria-hidden="true">
           SD
         </span>
+
         <span className="app-navigation__brand-copy">
           <span>
             Skillz <strong>Directory</strong>
@@ -179,20 +219,25 @@ export default function AppNavigation() {
             >
               <span className="app-navigation__link-icon" aria-hidden="true">
                 <link.icon size={17} />
+
                 {link.label === "Messages" &&
                   visibleUnreadCount !== null &&
                   visibleUnreadCount > 0 && (
-                  <span className="app-navigation__notification">
-                    <Bell size={9} />
-                  </span>
-                )}
+                    <span className="app-navigation__notification">
+                      <Bell size={9} />
+                    </span>
+                  )}
               </span>
+
               {link.label}
+
               {link.label === "Messages" &&
                 visibleUnreadCount !== null &&
                 visibleUnreadCount > 0 && (
-                <span className="app-navigation__badge">{visibleUnreadCount}</span>
-              )}
+                  <span className="app-navigation__badge">
+                    {visibleUnreadCount}
+                  </span>
+                )}
             </NavLink>
           ))}
         </nav>
@@ -211,6 +256,7 @@ export default function AppNavigation() {
                   <UserRound size={20} aria-hidden="true" />
                 </Link>
               )}
+
               <button
                 type="button"
                 className="app-navigation__logout"
@@ -229,6 +275,7 @@ export default function AppNavigation() {
               >
                 Sign in
               </Link>
+
               <Link
                 className="app-navigation__register"
                 to="/register"

@@ -10,15 +10,16 @@ import {
 } from "lucide-react";
 import ErrorAlert from "../components/ErrorAlert";
 import Eyebrow from "../components/Eyebrow";
-import { providers } from "../data/provider";
 import RecentConversations from "../features/resident/RecentConversations";
 import RecentProviders from "../features/resident/RecentProviders";
 import { useAuth } from "../hooks/useAuth";
 import { useSavedServices } from "../hooks/useSavedServices";
+import { getProviders } from "../services/providerService";
 import {
   getRecentlyViewedProviders,
   getRecentConversations,
 } from "../services/residentService";
+import type { ServiceProvider } from "../types/serviceProvider";
 import "./ResidentDashboardPage.css";
 
 interface DashboardStats {
@@ -36,7 +37,27 @@ export default function ResidentDashboardPage() {
   });
   const [statsLoading, setStatsLoading] = useState(true);
   const [statsError, setStatsError] = useState("");
+  const [providers, setProviders] = useState<ServiceProvider[]>([]);
+  const [providersError, setProvidersError] = useState("");
   const { savedServices, error: savedServicesError } = useSavedServices(user?.id);
+
+  useEffect(() => {
+    let active = true;
+    getProviders()
+      .then((data) => {
+        if (active) setProviders(data);
+      })
+      .catch((error: unknown) => {
+        console.error("Could not load service providers for saved services.", error);
+        if (active) {
+          setProvidersError("Provider information could not be loaded.");
+        }
+      });
+
+    return () => {
+      active = false;
+    };
+  }, []);
 
   useEffect(() => {
     let active = true;
@@ -185,6 +206,7 @@ export default function ResidentDashboardPage() {
             </div>
 
             {savedServicesError && <ErrorAlert message={savedServicesError} />}
+            {providersError && <ErrorAlert message={providersError} />}
             {visibleSavedServices.length > 0 ? (
               <ul className="resident-home__saved-list">
                 {visibleSavedServices.map((saved) => {

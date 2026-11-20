@@ -14,7 +14,6 @@ export const ChatSidebar: React.FC<Props> = ({ conversations, activeId, onSelect
       <div className="sidebar-header">
         <h2>Messages</h2>
       </div>
-      
       <div className="sidebar-list">
         {conversations.map((conv) => {
           const isActive = activeId === conv.id;
