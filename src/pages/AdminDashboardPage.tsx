@@ -1,335 +1,275 @@
-import { useEffect, useState } from "react";
-import { isAxiosError } from "axios";
-import { useNavigate } from "react-router-dom";
+import { useEffect, useMemo, useState } from "react";
+import { useLocation, useNavigate } from "react-router-dom";
 import {
-  ShieldAlert, Users, Store, Flag, LogOut, Plus
+  Bell, BriefcaseBusiness, CheckCircle2, ChevronDown, ChevronRight,
+  CircleAlert, Clock3, LayoutDashboard, LogOut, Menu,
+  MessageSquareWarning, Search, Settings2, ShieldCheck, Star, Store,
+  UserRound, Users, X, XCircle
 } from "lucide-react";
-import Eyebrow from "../components/Eyebrow";
-import Modal from "../components/Modal";
 import { useAuth } from "../hooks/useAuth";
-import { formatDate } from "../utils/format";
 import { adminService } from "../services/adminService";
 import type { AdminOverview } from "../services/adminService";
-import type { User, ProviderSummary, UserRole } from "../types";
+import type { ProviderSummary, User } from "../types";
+import "./AdminDashboardPage.css";
+
+type ManagementTab = "provider-approval" | "users" | "providers" | "services" | "complaints" | "reviews";
+
+const managementTabs: { id: ManagementTab; label: string; icon: typeof Users }[] = [
+  { id: "provider-approval", label: "Provider Approval", icon: ShieldCheck },
+  { id: "users", label: "User Management", icon: Users },
+  { id: "providers", label: "Provider Management", icon: Store },
+  { id: "services", label: "Service Management", icon: BriefcaseBusiness },
+  { id: "complaints", label: "Complaints & Reports", icon: MessageSquareWarning },
+  { id: "reviews", label: "Reviews & Ratings", icon: Star },
+];
+
+const sampleServices = [
+  { id: "1", name: "Emergency Electrical Repairs", provider: "Brightline Electrical", category: "Electrical", price: "From R450", location: "Cape Town", status: "Pending", date: "18 Nov 2026" },
+  { id: "2", name: "Residential Plumbing", provider: "FlowRight Plumbing", category: "Plumbing", price: "From R350", location: "Bellville", status: "Active", date: "16 Nov 2026" },
+  { id: "3", name: "Garden Maintenance", provider: "GreenScape Services", category: "Gardening", price: "R280/hr", location: "Durbanville", status: "Rejected", date: "14 Nov 2026" },
+];
+
+const sampleComplaints = [
+  { id: "CMP-1048", reporter: "Naledi M.", reported: "Brightline Electrical", category: "Poor service delivery", service: "Emergency Electrical Repairs", date: "18 Nov 2026", status: "New" },
+  { id: "CMP-1044", reporter: "Thabo K.", reported: "FlowRight Plumbing", category: "Misleading advertisement", service: "Residential Plumbing", date: "17 Nov 2026", status: "Under Investigation" },
+];
+
+const sampleReviews = [
+  { id: "1", customer: "Aisha Daniels", provider: "Brightline Electrical", service: "Electrical Repairs", rating: 5, text: "Fast response and excellent workmanship.", date: "18 Nov 2026", reported: false },
+  { id: "2", customer: "John Petersen", provider: "FlowRight Plumbing", service: "Leak Repair", rating: 2, text: "The appointment was rescheduled twice.", date: "15 Nov 2026", reported: true },
+];
+
+function StatusBadge({ value }: { value: string }) {
+  const normalized = value.toLowerCase().replace(/\s+/g, "-");
+  return <span className={`admin-status admin-status--${normalized}`}>{value}</span>;
+}
+
+function initialAvatar(name: string) {
+  return name.split(" ").map((part) => part[0]).join("").slice(0, 2).toUpperCase();
+}
 
 export default function AdminDashboardPage() {
-  const { logout } = useAuth();
+  const { user, logout } = useAuth();
   const navigate = useNavigate();
-
-  // State
-  const [activeTab, setActiveTab] = useState<"overview" | "users" | "providers">("overview");
+  const location = useLocation();
+  const isManagement = location.pathname === "/admin/management";
+  const [sidebarOpen, setSidebarOpen] = useState(false);
+  const [activeTab, setActiveTab] = useState<ManagementTab>("provider-approval");
   const [stats, setStats] = useState<AdminOverview | null>(null);
   const [users, setUsers] = useState<User[]>([]);
   const [providers, setProviders] = useState<ProviderSummary[]>([]);
   const [loading, setLoading] = useState(true);
-  const [error, setError] = useState<string | null>(null);
-  
-  // Modal State
-  const [isRoleModalOpen, setIsRoleModalOpen] = useState(false);
-  const [isAdminModalOpen, setIsAdminModalOpen] = useState(false);
-  const [selectedUser, setSelectedUser] = useState<User | null>(null);
-  const [newRole, setNewRole] = useState<UserRole>("resident");
-  const [newAdminEmail, setNewAdminEmail] = useState("");
+  const [error, setError] = useState("");
+  const [toast, setToast] = useState("");
+  const [search, setSearch] = useState("");
+  const [confirm, setConfirm] = useState<{ title: string; message: string; action: () => void; danger?: boolean } | null>(null);
 
-  // Fetch Real Data
   useEffect(() => {
-    async function loadData() {
+    let active = true;
+    async function load() {
       try {
         setLoading(true);
-        setError(null);
-        const [overviewData, usersData, providersData] = await Promise.all([
+        const [overview, allUsers, pendingProviders] = await Promise.all([
           adminService.getOverview(),
           adminService.getAllUsers(),
-          adminService.getPendingProviders()
+          adminService.getPendingProviders(),
         ]);
-        setStats(overviewData);
-        setUsers(usersData);
-        setProviders(providersData);
-      } catch (loadError: unknown) {
-        if (
-          isAxiosError(loadError) &&
-          (loadError.response?.status === 401 || loadError.response?.status === 403)
-        ) {
-          setError("You are not authorized to view administrator data.");
-        } else {
-          console.error("Could not load administrator data.", loadError);
-          setError(
-            loadError instanceof Error
-              ? loadError.message
-              : "Failed to load admin data.",
-          );
-        }
+        if (!active) return;
+        setStats(overview);
+        setUsers(allUsers);
+        setProviders(pendingProviders);
+      } catch (loadError) {
+        if (active) setError(loadError instanceof Error ? loadError.message : "Failed to load administrator data.");
       } finally {
-        setLoading(false);
+        if (active) setLoading(false);
       }
     }
-    loadData();
+    void load();
+    return () => { active = false; };
   }, []);
 
-  const onLogout = async () => {
-    let logoutError = "";
-    try {
-      await logout();
-    } catch (error) {
-      console.error("Could not sign out on the server.", error);
-      logoutError = "We could not confirm sign-out with the server.";
-    } finally {
-      navigate("/login", {
-        replace: true,
-        state: logoutError ? { logoutError } : undefined,
-      });
-    }
-  };
+  useEffect(() => {
+    if (!toast) return;
+    const timer = window.setTimeout(() => setToast(""), 3200);
+    return () => window.clearTimeout(timer);
+  }, [toast]);
 
-  // --- HANDLERS ---
-  const handleProviderAction = async (id: string, action: "approve" | "reject") => {
-    try {
-      if (action === "approve") {
-        await adminService.approveProviderListing(id);
-      } else {
-        await adminService.rejectProviderListing(id);
-      }
-      setProviders(prev => prev.filter(p => p.id !== id));
-    } catch (error) {
-      console.error(`Could not ${action} provider listing.`, error);
-      alert(`Failed to ${action} provider.`);
-    }
-  };
+  const cards = [
+    { label: "Total Users", value: stats?.totalUsers ?? 0, icon: Users, tone: "blue" },
+    { label: "Total Providers", value: stats?.totalProviders ?? 0, icon: Store, tone: "orange" },
+    { label: "Pending Approvals", value: providers.length, icon: Clock3, tone: "amber" },
+    { label: "Active Services", value: 128, icon: BriefcaseBusiness, tone: "green" },
+    { label: "Open Complaints", value: 3, icon: CircleAlert, tone: "red" },
+  ];
 
-  const handleBanUser = async (id: string) => {
-    if (!window.confirm("Ban this user?")) return;
-    try {
-      await adminService.updateUserStatus(id, "ban");
-      alert("User banned.");
-    } catch (error) {
-      console.error("Could not ban user.", error);
-      alert("Failed to ban user.");
-    }
-  };
+  const filteredUsers = useMemo(() => {
+    const term = search.toLowerCase();
+    return users.filter((item) => `${item.fullName} ${item.email} ${item.phone ?? ""}`.toLowerCase().includes(term));
+  }, [search, users]);
 
-  const openRoleModal = (user: User) => {
-    setSelectedUser(user);
-    setNewRole(user.role);
-    setIsRoleModalOpen(true);
-  };
+  async function handleLogout() {
+    await logout();
+    navigate("/login", { replace: true });
+  }
 
-  const submitRoleChange = async () => {
-    if (!selectedUser) return;
-    try {
-      await adminService.changeUserRole(selectedUser.id, newRole);
-      setUsers(prev => prev.map(u => u.id === selectedUser.id ? { ...u, role: newRole } : u));
-      setIsRoleModalOpen(false);
-    } catch (error) {
-      console.error("Could not change user role.", error);
-      alert("Failed to change role.");
-    }
-  };
+  function openManagement(tab: ManagementTab = "provider-approval") {
+    setActiveTab(tab);
+    navigate("/admin/management");
+    setSidebarOpen(false);
+  }
 
-  const submitNewAdmin = async () => {
-    if (!newAdminEmail) return;
-    try {
-      // Note: If the backend requires a password to create an admin, you must add it here.
-      const newUser = await adminService.createAdmin({ fullName: "New Admin", email: newAdminEmail });
-      setUsers([newUser, ...users]);
-      setIsAdminModalOpen(false);
-      setNewAdminEmail("");
-    } catch (error) {
-      console.error("Could not create administrator.", error);
-      alert("Failed to create admin.");
-    }
-  };
+  async function providerAction(provider: ProviderSummary, action: "approve" | "reject") {
+    setConfirm({
+      title: action === "approve" ? "Approve provider?" : "Reject provider?",
+      message: action === "approve"
+        ? `${provider.name} will be verified and notified.`
+        : `Provide a reason and reject ${provider.name}'s application.`,
+      danger: action === "reject",
+      action: async () => {
+        try {
+          if (action === "approve") await adminService.approveProviderListing(provider.id);
+          else await adminService.rejectProviderListing(provider.id);
+          setProviders((current) => current.filter((item) => item.id !== provider.id));
+          setToast(`Provider ${action === "approve" ? "approved" : "rejected"} successfully.`);
+        } catch {
+          setToast(`Unable to ${action} provider.`);
+        }
+      },
+    });
+  }
 
-  if (loading) return <div className="p-5 text-center text-muted-ink">Loading Admin Data...</div>;
-  if (error) return <div className="p-5 text-center text-danger">{error}</div>;
+  function renderTableEmpty(message: string, columns: number) {
+    return <tr><td colSpan={columns} className="admin-empty">{message}</td></tr>;
+  }
+
+  function ProviderApproval() {
+    const [filter, setFilter] = useState("Pending");
+    return (
+      <section className="admin-panel">
+        <div className="admin-panel__header">
+          <div><h2>Provider Approval</h2><p>Review and verify newly registered providers</p></div>
+          <div className="admin-filter-tabs">
+            {["Pending", "Approved", "Rejected", "All"].map((item) => (
+              <button key={item} className={filter === item ? "is-active" : ""} onClick={() => setFilter(item)}>{item}</button>
+            ))}
+          </div>
+        </div>
+        <div className="admin-table-wrap">
+          <table className="admin-table">
+            <thead><tr><th>Provider</th><th>Business</th><th>Contact</th><th>Registered</th><th>Status</th><th>Actions</th></tr></thead>
+            <tbody>
+              {providers.map((provider) => (
+                <tr key={provider.id}>
+                  <td><div className="admin-person"><span className="admin-avatar">{initialAvatar(provider.name)}</span><strong>{provider.name}</strong></div></td>
+                  <td><strong>{provider.name}</strong><small>{provider.category}</small></td>
+                  <td><small>{provider.serviceArea ?? "Location not provided"}</small></td>
+                  <td>18 Nov 2026</td><td><StatusBadge value="Pending" /></td>
+                  <td><div className="admin-row-actions"><button className="admin-icon-button" title="View details"><ChevronRight size={17} /></button><button className="admin-action approve" onClick={() => providerAction(provider, "approve")}><CheckCircle2 size={15} />Approve</button><button className="admin-action reject" onClick={() => providerAction(provider, "reject")}><XCircle size={15} />Reject</button></div></td>
+                </tr>
+              ))}
+              {providers.length === 0 && renderTableEmpty("No provider applications match this view.", 6)}
+            </tbody>
+          </table>
+        </div>
+      </section>
+    );
+  }
+
+  function UserManagement() {
+    const [role, setRole] = useState("All roles");
+    const [status, setStatus] = useState("All statuses");
+    return (
+      <section className="admin-panel">
+        <div className="admin-panel__header"><div><h2>User Management</h2><p>Manage residents, providers and administrator accounts</p></div></div>
+        <div className="admin-controls"><label className="admin-search"><Search size={16}/><input value={search} onChange={(event) => setSearch(event.target.value)} placeholder="Search name, email or phone" /></label><select value={role} onChange={(e) => setRole(e.target.value)}><option>All roles</option><option>Resident</option><option>Service Provider</option><option>Administrator</option></select><select value={status} onChange={(e) => setStatus(e.target.value)}><option>All statuses</option><option>Active</option><option>Suspended</option></select></div>
+        <div className="admin-table-wrap"><table className="admin-table"><thead><tr><th>User</th><th>Email</th><th>Role</th><th>Registered</th><th>Status</th><th>Actions</th></tr></thead><tbody>
+          {filteredUsers.filter((item) => role === "All roles" || item.role === role.toLowerCase().replace("service ", "")).map((item) => (
+            <tr key={item.id}><td><div className="admin-person"><span className="admin-avatar">{initialAvatar(item.fullName)}</span><strong>{item.fullName}</strong></div></td><td>{item.email}</td><td><span className="admin-role">{item.role}</span></td><td>{item.createdAt ? new Date(item.createdAt).toLocaleDateString("en-ZA") : "—"}</td><td><StatusBadge value="Active" /></td><td><div className="admin-row-actions"><button className="admin-icon-button" title="View details"><ChevronRight size={17} /></button>{item.role !== "admin" && <button className="admin-action reject" onClick={() => setConfirm({title:"Suspend account?", message:`Suspend ${item.fullName}?`, danger:true, action:()=>setToast("Account suspended.")})}>Suspend</button>}</div></td></tr>
+          ))}
+          {filteredUsers.length === 0 && renderTableEmpty("No users found.", 6)}
+        </tbody></table></div>
+      </section>
+    );
+  }
+
+  function ProviderManagement() {
+    const [query, setQuery] = useState("");
+    const listed = users.filter((item) => item.role === "provider" && `${item.fullName} ${item.email}`.toLowerCase().includes(query.toLowerCase()));
+    return (
+      <section className="admin-panel"><div className="admin-panel__header"><div><h2>Provider Management</h2><p>Manage verified businesses and account status</p></div></div><div className="admin-controls"><label className="admin-search"><Search size={16}/><input value={query} onChange={(e)=>setQuery(e.target.value)} placeholder="Search providers" /></label><select><option>All verification statuses</option><option>Verified</option><option>Pending</option></select><select><option>All account statuses</option><option>Active</option><option>Suspended</option></select></div><div className="admin-table-wrap"><table className="admin-table"><thead><tr><th>Provider</th><th>Contact</th><th>Verification</th><th>Services</th><th>Rating</th><th>Account</th><th>Actions</th></tr></thead><tbody>
+        {listed.map((item)=><tr key={item.id}><td><div className="admin-person"><span className="admin-avatar">{initialAvatar(item.fullName)}</span><strong>{item.fullName}</strong></div></td><td>{item.email}</td><td><StatusBadge value="Verified"/></td><td>{providers.length}</td><td><span className="admin-rating"><Star size={14} fill="currentColor"/> 4.8</span></td><td><StatusBadge value="Active"/></td><td><button className="admin-icon-button" title="View provider"><ChevronRight size={17}/></button></td></tr>)}
+        {listed.length===0&&renderTableEmpty("No providers found.",7)}
+      </tbody></table></div></section>
+    );
+  }
+
+  function ServiceManagement() {
+    const [filter, setFilter] = useState("All services");
+    const [rows, setRows] = useState(sampleServices);
+    const visible = rows.filter((item) => filter==="All services" || item.status===filter.replace(" services","").replace(" approval",""));
+    return <section className="admin-panel"><div className="admin-panel__header"><div><h2>Service Management</h2><p>Moderate listings across the marketplace</p></div></div><div className="admin-controls"><label className="admin-search"><Search size={16}/><input placeholder="Search services" /></label><select value={filter} onChange={(e)=>setFilter(e.target.value)}><option>All services</option><option>Pending approval</option><option>Active</option><option>Inactive</option><option>Rejected</option></select></div><div className="admin-table-wrap"><table className="admin-table"><thead><tr><th>Service</th><th>Provider</th><th>Category</th><th>Price</th><th>Location</th><th>Status</th><th>Actions</th></tr></thead><tbody>{visible.map((item)=><tr key={item.id}><td><strong>{item.name}</strong><small>{item.date}</small></td><td>{item.provider}</td><td>{item.category}</td><td>{item.price}</td><td>{item.location}</td><td><StatusBadge value={item.status}/></td><td><div className="admin-row-actions"><button className="admin-icon-button"><ChevronRight size={17}/></button>{item.status==="Pending"&&<><button className="admin-action approve" onClick={()=>{setRows((r)=>r.map((x)=>x.id===item.id?{...x,status:"Active"}:x));setToast("Service approved.");}}>Approve</button><button className="admin-action reject" onClick={()=>setConfirm({title:"Reject service?",message:"A rejection reason is required.",danger:true,action:()=>{setRows((r)=>r.map((x)=>x.id===item.id?{...x,status:"Rejected"}:x));setToast("Service rejected.");}})}>Reject</button></>}</div></td></tr>)}{visible.length===0&&renderTableEmpty("No services found.",7)}</tbody></table></div></section>;
+  }
+
+  function Complaints() {
+    const [rows, setRows] = useState(sampleComplaints);
+    return <section className="admin-panel"><div className="admin-panel__header"><div><h2>Complaints & Reports</h2><p>Investigate platform reports and take appropriate action</p></div></div><div className="admin-controls"><label className="admin-search"><Search size={16}/><input placeholder="Search complaints" /></label><select><option>All statuses</option><option>New</option><option>Under Investigation</option><option>Resolved</option></select></div><div className="admin-table-wrap"><table className="admin-table"><thead><tr><th>Reference</th><th>Reporter</th><th>Reported User</th><th>Category</th><th>Submitted</th><th>Status</th><th>Actions</th></tr></thead><tbody>{rows.map((item)=><tr key={item.id}><td><strong>{item.id}</strong></td><td>{item.reporter}</td><td>{item.reported}</td><td>{item.category}</td><td>{item.date}</td><td><StatusBadge value={item.status}/></td><td><div className="admin-row-actions"><button className="admin-icon-button"><ChevronRight size={17}/></button><button className="admin-action approve" onClick={()=>{setRows((r)=>r.map((x)=>x.id===item.id?{...x,status:"Resolved"}:x));setToast("Complaint resolved.");}}>Resolve</button></div></td></tr>)}</tbody></table></div></section>;
+  }
+
+  function Reviews() {
+    const [rows, setRows] = useState(sampleReviews);
+    return <section className="admin-panel"><div className="admin-panel__header"><div><h2>Reviews & Ratings</h2><p>Monitor feedback and investigate policy violations</p></div></div><div className="admin-controls"><label className="admin-search"><Search size={16}/><input placeholder="Search reviews" /></label><select><option>All ratings</option><option>5 stars</option><option>4 stars</option><option>3 stars</option><option>2 stars</option><option>1 star</option></select><select><option>All reviews</option><option>Reported only</option></select></div><div className="admin-review-list">{rows.map((item)=><article className="admin-review" key={item.id}><div className="admin-review__top"><div className="admin-person"><span className="admin-avatar">{initialAvatar(item.customer)}</span><div><strong>{item.customer}</strong><small>Reviewed {item.provider}</small></div></div><div className="admin-review__stars" aria-label={`${item.rating} stars`}>{[1,2,3,4,5].map((star)=><Star key={star} size={16} fill={star<=item.rating?"currentColor":"none"}/>)}</div></div><p>{item.text}</p><div className="admin-review__footer"><span>{item.date} · {item.service}</span>{item.reported?<button className="admin-action reject" onClick={()=>setConfirm({title:"Remove review?",message:"The removal will be recorded with a moderation reason.",danger:true,action:()=>{setRows((r)=>r.filter((x)=>x.id!==item.id));setToast("Review removed.");}})}>Remove review</button>:<StatusBadge value="Genuine"/>}</div></article>)}</div></section>;
+  }
+
+  function renderManagementTab() {
+    if (activeTab === "users") return <UserManagement />;
+    if (activeTab === "providers") return <ProviderManagement />;
+    if (activeTab === "services") return <ServiceManagement />;
+    if (activeTab === "complaints") return <Complaints />;
+    if (activeTab === "reviews") return <Reviews />;
+    return <ProviderApproval />;
+  }
 
   return (
-    <div className="container-fluid py-5 px-4 px-md-5" style={{ width: "100%", maxWidth: 1400, margin: 0, textAlign: "left" }}>
-      
-      <header className="mb-4">
-        <Eyebrow>System Administration</Eyebrow>
-        <h1 className="mb-0" style={{ lineHeight: 1 }}>
-          <span className="display-heading" style={{ fontSize: "72px", color: "var(--ink)" }}>ADMIN</span>{" "}
-          <span className="display-heading" style={{ fontSize: "48px", color: "var(--primary)" }}>DASHBOARD.</span>
-        </h1>
-      </header>
-
-      {/* TABS NAVIGATION */}
-      <div className="tab-strip mb-4" role="tablist">
-        <button role="tab" aria-selected={activeTab === "overview"} onClick={() => setActiveTab("overview")}>
-          Overview
-        </button>
-        <button role="tab" aria-selected={activeTab === "users"} onClick={() => setActiveTab("users")}>
-          User Management
-        </button>
-        <button role="tab" aria-selected={activeTab === "providers"} onClick={() => setActiveTab("providers")}>
-          Provider Moderation ({providers.length})
-        </button>
-      </div>
-
-      {/* TAB: OVERVIEW */}
-      {activeTab === "overview" && stats && (
-        <div className="row g-4">
-          <div className="col-12 col-md-6 col-xl-3">
-            <div className="surface-box p-4 d-flex align-items-center gap-3">
-              <div className="p-3 rounded-circle text-white" style={{ background: "var(--primary)" }}><Users size={24} /></div>
-              <div>
-                <div className="stat-card-number">{stats.totalUsers || 0}</div>
-                <div className="stat-card-label">Total Users</div>
+    <div className="admin-shell">
+      <aside className={`admin-sidebar${sidebarOpen ? " is-open" : ""}`}>
+        <button className="admin-sidebar__close" onClick={() => setSidebarOpen(false)} aria-label="Close menu"><X size={20}/></button>
+        <button className="admin-brand" onClick={() => navigate("/admin/dashboard")}><span>SD</span><div><strong>Skillz <b>Directory</b></strong><small>Administration</small></div></button>
+        <nav className="admin-nav" aria-label="Administrator navigation">
+          <button className={!isManagement ? "is-active" : ""} onClick={() => navigate("/admin/dashboard")}><LayoutDashboard size={18}/>Dashboard</button>
+          <button className={isManagement ? "is-active" : ""} onClick={() => openManagement()}><Settings2 size={18}/>Management Centre</button>
+          <button className={location.pathname === "/admin/profile" ? "is-active" : ""} onClick={() => navigate("/admin/profile")}><UserRound size={18}/>Admin Profile</button>
+        </nav>
+        <button className="admin-sidebar__logout" onClick={handleLogout}><LogOut size={18}/>Logout</button>
+      </aside>
+      {sidebarOpen && <button className="admin-overlay" onClick={() => setSidebarOpen(false)} aria-label="Close navigation"/>}
+      <main className="admin-main">
+        <header className="admin-topbar">
+          <div className="admin-topbar__title"><button className="admin-mobile-menu" onClick={() => setSidebarOpen(true)}><Menu size={21}/></button><div><small>Skillz Directory</small><strong>{isManagement ? "Management Centre" : "Admin Dashboard"}</strong></div></div>
+          <div className="admin-topbar__actions"><button className="admin-notification" aria-label="Notifications"><Bell size={19}/><span/></button><button className="admin-profile" onClick={() => navigate("/admin/profile")}><span className="admin-profile__avatar">{initialAvatar(user?.fullName ?? "Admin User")}</span><span><strong>{user?.fullName ?? "Administrator"}</strong><small>System Admin</small></span><ChevronDown size={16}/></button></div>
+        </header>
+        <div className="admin-content">
+          {loading ? <div className="admin-loading"><span/><p>Loading administration data...</p></div> : error ? <div className="admin-error">{error}</div> : isManagement ? (
+            <>
+              <div className="admin-page-heading"><div><p>Management Centre</p><h1>Platform Administration</h1></div></div>
+              <div className="admin-tabs" role="tablist">{managementTabs.map((tab)=>{const Icon=tab.icon;return <button key={tab.id} role="tab" aria-selected={activeTab===tab.id} className={activeTab===tab.id?"is-active":""} onClick={()=>setActiveTab(tab.id)}><Icon size={17}/>{tab.label}</button>})}</div>
+              {renderManagementTab()}
+            </>
+          ) : (
+            <>
+              <div className="admin-page-heading"><div><p>Overview</p><h1>Admin Dashboard</h1></div><span className="admin-date">{new Date().toLocaleDateString("en-ZA",{day:"numeric",month:"short",year:"numeric"})}</span></div>
+              <div className="admin-stat-grid">{cards.map((card)=>{const Icon=card.icon;return <article className="admin-stat-card" key={card.label}><div className={`admin-stat-card__icon ${card.tone}`}><Icon size={20}/></div><div><strong>{card.value.toLocaleString("en-ZA")}</strong><span>{card.label}</span></div></article>})}</div>
+              <div className="admin-dashboard-grid">
+                <section className="admin-panel admin-priority"><div className="admin-panel__header"><div><h2>Pending Provider Approvals</h2><p>Applications requiring verification</p></div><button onClick={()=>openManagement("provider-approval")}>View all <ChevronRight size={15}/></button></div>{providers.length ? providers.slice(0,4).map((provider)=><div className="admin-approval-row" key={provider.id}><div className="admin-person"><span className="admin-avatar">{initialAvatar(provider.name)}</span><div><strong>{provider.name}</strong><small>{provider.category}</small></div></div><div className="admin-approval-row__meta"><StatusBadge value="Pending"/><small>18 Nov 2026</small></div><div className="admin-row-actions"><button className="admin-action approve" onClick={()=>providerAction(provider,"approve")}><CheckCircle2 size={15}/>Approve</button><button className="admin-action reject" onClick={()=>providerAction(provider,"reject")}><XCircle size={15}/>Reject</button></div></div>):<div className="admin-empty">No pending applications.</div>}</section>
+                <section className="admin-panel"><div className="admin-panel__header"><div><h2>Quick Actions</h2><p>Common administration tasks</p></div></div><div className="admin-quick-actions"><button onClick={()=>openManagement("provider-approval")}><ShieldCheck size={19}/><span>Review Providers<small>{providers.length} pending</small></span><ChevronRight size={17}/></button><button onClick={()=>openManagement("users")}><Users size={19}/><span>Manage Users<small>All accounts</small></span><ChevronRight size={17}/></button><button onClick={()=>openManagement("services")}><BriefcaseBusiness size={19}/><span>Manage Services<small>Listings & moderation</small></span><ChevronRight size={17}/></button><button onClick={()=>openManagement("complaints")}><MessageSquareWarning size={19}/><span>View Complaints<small>3 unresolved</small></span><ChevronRight size={17}/></button></div></section>
+                <section className="admin-panel"><div className="admin-panel__header"><div><h2>Recent Complaints</h2><p>Latest unresolved reports</p></div><button onClick={()=>openManagement("complaints")}>View all <ChevronRight size={15}/></button></div>{sampleComplaints.map((item)=><button className="admin-complaint" key={item.id} onClick={()=>openManagement("complaints")}><span className="admin-complaint__icon"><CircleAlert size={18}/></span><span><strong>{item.category}</strong><small>{item.reporter} reported {item.reported}</small></span><StatusBadge value={item.status}/></button>)}</section>
+                <section className="admin-panel"><div className="admin-panel__header"><div><h2>Recent Activity</h2><p>Latest platform events</p></div></div><div className="admin-activity"><div><span className="green"><UserRound size={14}/></span><p><strong>New provider application</strong><small>Brightline Electrical · 12 min ago</small></p></div><div><span className="blue"><BriefcaseBusiness size={14}/></span><p><strong>New service submitted</strong><small>Emergency Electrical Repairs · 28 min ago</small></p></div><div><span className="orange"><CircleAlert size={14}/></span><p><strong>Complaint submitted</strong><small>CMP-1048 · 1 hr ago</small></p></div></div></section>
               </div>
-            </div>
-          </div>
-          <div className="col-12 col-md-6 col-xl-3">
-            <div className="surface-box p-4 d-flex align-items-center gap-3">
-              <div className="p-3 rounded-circle text-white" style={{ background: "var(--ink)" }}><Store size={24} /></div>
-              <div>
-                <div className="stat-card-number">{stats.totalProviders || 0}</div>
-                <div className="stat-card-label">Active Providers</div>
-              </div>
-            </div>
-          </div>
-          <div className="col-12 col-md-6 col-xl-3">
-            <div className="surface-box p-4 d-flex align-items-center gap-3">
-              <div className="p-3 rounded-circle text-white" style={{ background: "var(--primary)" }}><ShieldAlert size={24} /></div>
-              <div>
-                <div className="stat-card-number">{stats.pendingListings || 0}</div>
-                <div className="stat-card-label">Pending Listings</div>
-              </div>
-            </div>
-          </div>
-          <div className="col-12 col-md-6 col-xl-3">
-            <div className="surface-box p-4 d-flex align-items-center gap-3">
-              <div className="p-3 rounded-circle text-white" style={{ background: "var(--destructive)" }}><Flag size={24} /></div>
-              <div>
-                <div className="stat-card-number">{stats.reportedUsers || 0}</div>
-                <div className="stat-card-label">Reported Users</div>
-              </div>
-            </div>
-          </div>
+            </>
+          )}
         </div>
-      )}
-
-      {/* TAB: USERS */}
-      {activeTab === "users" && (
-        <div className="surface-box p-4">
-          <div className="d-flex justify-content-between align-items-center mb-4">
-            <h2 className="section-label mb-0">All Registered Users</h2>
-            <button className="btn btn-athletic btn-sm d-flex gap-2" onClick={() => setIsAdminModalOpen(true)}>
-              <Plus size={16} /> Create Admin
-            </button>
-          </div>
-          <ul className="list-unstyled mb-0">
-            {users.map((u) => (
-              <li key={u.id} className="d-flex align-items-center justify-content-between py-3 border-bottom">
-                <div>
-                  <div className="fw-bold">{u.fullName}</div>
-                  <div className="small text-muted-ink">{u.email} · Joined {formatDate(u.createdAt)}</div>
-                  <span className={`badge mt-1 text-uppercase ${u.role === 'admin' ? 'text-bg-dark' : u.role === 'provider' ? 'text-bg-primary' : 'text-bg-secondary'}`}>
-                    {u.role}
-                  </span>
-                </div>
-                <div className="d-flex gap-2">
-                  <button onClick={() => openRoleModal(u)} className="btn btn-sm btn-outline-dark">
-                    Change Role
-                  </button>
-                  {u.role !== "admin" && (
-                    <button onClick={() => handleBanUser(u.id)} className="btn btn-sm btn-outline-danger">
-                      Ban
-                    </button>
-                  )}
-                </div>
-              </li>
-            ))}
-            {users.length === 0 && (
-              <li className="text-center py-4 text-muted-ink">No users found.</li>
-            )}
-          </ul>
-        </div>
-      )}
-
-      {/* TAB: PROVIDERS */}
-      {activeTab === "providers" && (
-        <div className="surface-box p-4">
-          <h2 className="section-label mb-4">Pending Provider Listings</h2>
-          <div className="table-responsive">
-            <table className="table table-hover align-middle">
-              <thead>
-                <tr>
-                  <th>Provider Name</th>
-                  <th>Category</th>
-                  <th>Area</th>
-                  <th className="text-end">Actions</th>
-                </tr>
-              </thead>
-              <tbody>
-                {providers.map((prov) => (
-                  <tr key={prov.id}>
-                    <td>
-                      <div className="fw-bold">{prov.name}</div>
-                      <div className="small text-muted-ink">{prov.description}</div>
-                    </td>
-                    <td>{prov.category}</td>
-                    <td>{prov.serviceArea}</td>
-                    <td className="text-end">
-                      <div className="d-flex justify-content-end gap-2">
-                        <button onClick={() => handleProviderAction(prov.id, "approve")} className="btn btn-sm btn-outline-success">Approve</button>
-                        <button onClick={() => handleProviderAction(prov.id, "reject")} className="btn btn-sm btn-outline-danger">Reject</button>
-                      </div>
-                    </td>
-                  </tr>
-                ))}
-                {providers.length === 0 && (
-                  <tr><td colSpan={4} className="text-center py-4 text-muted-ink">All caught up!</td></tr>
-                )}
-              </tbody>
-            </table>
-          </div>
-        </div>
-      )}
-
-      {/* Sign Out Section */}
-      <section className="surface-box p-4 mt-5 mb-4" style={{ maxWidth: 500 }}>
-        <h3 className="section-label">Admin Account</h3>
-        <button
-          type="button"
-          className="btn btn-danger-outline d-flex align-items-center gap-2 mt-3"
-          onClick={onLogout}
-        >
-          <LogOut size={16} /> Sign out
-        </button>
-      </section>
-
-      {/* MODALS */}
-      <Modal isOpen={isRoleModalOpen} onClose={() => setIsRoleModalOpen(false)} title="Change User Role">
-        <p>Update the role for <strong>{selectedUser?.fullName}</strong></p>
-        <select
-          className="form-select mb-4"
-          value={newRole}
-          onChange={(event) => {
-            const value = event.currentTarget.value;
-            if (value === "resident" || value === "provider" || value === "admin") {
-              setNewRole(value);
-            }
-          }}
-        >
-          <option value="resident">Resident</option>
-          <option value="provider">Service Provider</option>
-          <option value="admin">Administrator</option>
-        </select>
-        <button className="btn btn-athletic w-100" onClick={submitRoleChange}>Save Changes</button>
-      </Modal>
-
-      <Modal isOpen={isAdminModalOpen} onClose={() => setIsAdminModalOpen(false)} title="Create Administrator">
-        <p>Enter the email of the user you want to promote to Admin.</p>
-        <input 
-          type="email" 
-          className="form-control mb-4" 
-          placeholder="user@example.com" 
-          value={newAdminEmail}
-          onChange={(e) => setNewAdminEmail(e.target.value)}
-        />
-        <button className="btn btn-athletic w-100" onClick={submitNewAdmin}>Create Admin</button>
-      </Modal>
-
+      </main>
+      {confirm && <div className="admin-modal-backdrop" role="presentation"><section className="admin-modal" role="dialog" aria-modal="true"><button className="admin-modal__close" onClick={()=>setConfirm(null)}><X size={19}/></button><div className={`admin-modal__icon${confirm.danger?" is-danger":""}`}><ShieldCheck size={22}/></div><h2>{confirm.title}</h2><p>{confirm.message}</p>{confirm.danger&&<textarea placeholder="Enter reason..." aria-label="Reason"/>}<div className="admin-modal__actions"><button onClick={()=>setConfirm(null)}>Cancel</button><button className={confirm.danger?"danger":""} onClick={()=>{const action=confirm.action;setConfirm(null);void action();}}>Confirm</button></div></section></div>}
+      {toast && <div className="admin-toast"><CheckCircle2 size={17}/>{toast}</div>}
     </div>
   );
 }

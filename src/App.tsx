@@ -4,6 +4,7 @@ import AuthForm from "./components/AuthForm/AuthForm";
 import { AuthProvider, useAuth } from "./hooks/useAuth";
 import type { ReactNode } from "react";
 import AdminDashboardPage from "./pages/AdminDashboardPage";
+import AdminProfilePage from "./pages/AdminProfilePage";
 import AboutPage from "./pages/public/AboutPage";
 import MessagesPage from "./pages/MessagesPage";
 import ProviderProfilePage from "./pages/ProviderProfilepage";
@@ -195,6 +196,22 @@ function AppRoutes() {
           element={
             <RoleRoute role="admin">
               <AdminDashboardPage />
+            </RoleRoute>
+          }
+        />
+        <Route
+          path="/admin/management"
+          element={
+            <RoleRoute role="admin">
+              <AdminDashboardPage />
+            </RoleRoute>
+          }
+        />
+        <Route
+          path="/admin/profile"
+          element={
+            <RoleRoute role="admin">
+              <AdminProfilePage />
             </RoleRoute>
           }
         />
