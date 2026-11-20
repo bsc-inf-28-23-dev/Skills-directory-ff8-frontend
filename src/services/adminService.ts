@@ -40,7 +40,6 @@ export const adminService = {
     await api.patch(`/admin/users/${id}/role`, { role });
   },
 
-  // NEW: Required by AdminDashboardPage.tsx
   async createAdmin(payload: { fullName: string; email: string; password?: string }): Promise<User> {
     const { data } = await api.post<User>("/admin/admins", payload);
     return data;

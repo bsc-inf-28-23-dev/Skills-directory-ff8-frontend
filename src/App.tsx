@@ -1,4 +1,3 @@
-
 import { lazy, Suspense, type ReactNode } from "react";
 import {
   BrowserRouter,
@@ -12,6 +11,8 @@ import { getProviderProfileRouteId } from "./data/providerAccount";
 import { useAuth } from "./hooks/useAuth";
 import type { User } from "./types";
 import AdminDashboardPage from "./pages/AdminDashboardPage";
+import AdminProfilePage from "./pages/AdminProfilePage";
+import ChangePassword from "./pages/ChangePassword/ChangePassword";
 import MessagesPage from "./pages/MessagesPage";
 import ProviderReviewsPage from "./pages/ProviderReviewsPage";
 import ResidentDashboardPage from "./pages/ResidentDashboardPage";
@@ -20,7 +21,6 @@ import AboutPage from "./pages/public/AboutPage";
 import ForgotPassword from "./pages/public/ForgotPassword/ForgotPassword";
 import Login from "./pages/public/Login/Login";
 import Register from "./pages/public/Register/Register";
-import ChangePassword from "./pages/ChangePassword/ChangePassword";
 import ProviderLogin from "./pages/provider/ProviderLogin";
 import ProviderRegister from "./pages/provider/ProviderRegister";
 import ProviderDashboardPage from "./pages/provider/ProviderDashboardPage";
@@ -118,7 +118,6 @@ function ChangePasswordRoute() {
 
 function AppContent() {
   const location = useLocation();
-
   const hideNavigation = location.pathname === "/change-password";
 
   return (
@@ -148,7 +147,6 @@ function AppContent() {
           path="/change-password"
           element={<ChangePasswordRoute />}
         />
-
         <Route path="/resident/login" element={<ResidentLogin />} />
         <Route path="/resident/register" element={<ResidentRegister />} />
         <Route path="/provider/login" element={<ProviderLogin />} />
@@ -162,7 +160,6 @@ function AppContent() {
             </RoleRoute>
           }
         />
-
         <Route
           path="/resident/profile"
           element={
@@ -171,7 +168,6 @@ function AppContent() {
             </RoleRoute>
           }
         />
-
         <Route
           path="/resident/saved"
           element={
@@ -180,7 +176,6 @@ function AppContent() {
             </RoleRoute>
           }
         />
-
         <Route
           path="/resident/messages"
           element={
@@ -189,7 +184,6 @@ function AppContent() {
             </RoleRoute>
           }
         />
-
         <Route
           path="/resident/messages/:providerId"
           element={
@@ -198,7 +192,6 @@ function AppContent() {
             </RoleRoute>
           }
         />
-
         <Route
           path="/conversation/:providerId"
           element={
@@ -216,7 +209,6 @@ function AppContent() {
             </RoleRoute>
           }
         />
-
         <Route
           path="/provider/services/*"
           element={
@@ -225,7 +217,6 @@ function AppContent() {
             </RoleRoute>
           }
         />
-
         <Route
           path="/provider/profile"
           element={
@@ -234,7 +225,6 @@ function AppContent() {
             </RoleRoute>
           }
         />
-
         <Route
           path="/provider/profile/:providerId"
           element={
@@ -243,7 +233,6 @@ function AppContent() {
             </RoleRoute>
           }
         />
-
         <Route
           path="/provider/messages"
           element={
@@ -252,7 +241,6 @@ function AppContent() {
             </RoleRoute>
           }
         />
-
         <Route
           path="/provider/conversation/:residentId"
           element={
@@ -261,7 +249,6 @@ function AppContent() {
             </RoleRoute>
           }
         />
-
         <Route
           path="/provider/reviews"
           element={
@@ -270,7 +257,6 @@ function AppContent() {
             </RoleRoute>
           }
         />
-
         <Route
           path="/reviews/:providerId"
           element={
@@ -285,6 +271,22 @@ function AppContent() {
           element={
             <RoleRoute role="admin">
               <AdminDashboardPage />
+            </RoleRoute>
+          }
+        />
+        <Route
+          path="/admin/management"
+          element={
+            <RoleRoute role="admin">
+              <AdminDashboardPage />
+            </RoleRoute>
+          }
+        />
+        <Route
+          path="/admin/profile"
+          element={
+            <RoleRoute role="admin">
+              <AdminProfilePage />
             </RoleRoute>
           }
         />

@@ -35,6 +35,7 @@ export default function AppNavigation() {
   const [unreadCount, setUnreadCount] = useState<number | null>(null);
 
   const isAuthPage = /\/(login|register|forgot-password)$/.test(pathname);
+  const isAdminPage = pathname.startsWith("/admin/");
   const profileId = getProviderProfileRouteId(user);
   const messagesActive =
     pathname.startsWith("/resident/messages") ||
@@ -60,15 +61,13 @@ export default function AppNavigation() {
       }
     }
 
-    if (user && !isAuthPage) void loadUnreadCount();
-
+    if (user && !isAuthPage && !isAdminPage) void loadUnreadCount();
     return () => {
       active = false;
     };
-  }, [isAuthPage, user]);
+  }, [isAdminPage, isAuthPage, user]);
 
-  if (isAuthPage) return null;
-
+  if (isAuthPage || isAdminPage) return null;
   const visibleUnreadCount = user ? unreadCount : null;
 
   const links: NavigationLink[] =
