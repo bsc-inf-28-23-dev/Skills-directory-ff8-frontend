@@ -57,11 +57,11 @@ export default function AppNavigation() {
       }
     }
 
-    if (user && !isAuthPage) void loadUnreadCount();
+    if (user && !isAuthPage && !isAdminPage) void loadUnreadCount();
     return () => {
       active = false;
     };
-  }, [isAuthPage, user]);
+  }, [isAdminPage, isAuthPage, user]);
 
   if (isAuthPage || isAdminPage) return null;
   const visibleUnreadCount = user ? unreadCount : null;
