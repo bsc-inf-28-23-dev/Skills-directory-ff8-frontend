@@ -136,9 +136,7 @@ export default function ProviderServiceForm({
     } catch (error) {
       console.error("Could not read the selected service images.", error);
       setImageError(
-        error instanceof Error
-          ? error.message
-          : "Could not read the selected images.",
+        "We could not read the selected images. Please try again.",
       );
     }
   }
@@ -188,9 +186,7 @@ export default function ProviderServiceForm({
     } catch (error) {
       console.error("Could not save the service listing.", error);
       setFormError(
-        error instanceof Error
-          ? error.message
-          : "Your service could not be saved. Please try again.",
+        "Your service could not be saved. Please try again.",
       );
     } finally {
       setSaving(false);

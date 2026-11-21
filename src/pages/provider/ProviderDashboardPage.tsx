@@ -66,7 +66,7 @@ export default function ProviderDashboardPage() {
         console.error("Could not load the provider dashboard profile.", loadError);
         if (isCurrent) {
           setError(
-            "Your provider dashboard could not load from the server. Check your connection and try again.",
+            "Your provider dashboard could not load. Please try again.",
           );
         }
       } finally {

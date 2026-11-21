@@ -254,10 +254,10 @@ export default function ProviderProfileManagementPage({
         if (!active) return;
         applyBackendProfile(business, account);
       } catch (error) {
-        console.error("Could not load provider profile from the backend.", error);
+        console.error("Could not load provider profile.", error);
         if (active) {
           setProfileLoadError(
-            "Your business profile could not be loaded from the server. Check your connection and try again.",
+            "Your business profile could not be loaded. Please try again.",
           );
         }
       } finally {
@@ -311,7 +311,7 @@ export default function ProviderProfileManagementPage({
       );
       setImage(result);
     } catch (error) {
-      setUploadError(error instanceof Error ? error.message : "The image could not be uploaded.");
+      setUploadError("The image could not be uploaded. Please try again.");
     } finally {
       window.setTimeout(() => setUploadProgress(null), 800);
     }
@@ -350,8 +350,8 @@ export default function ProviderProfileManagementPage({
           ...documents,
         ]);
       })
-      .catch((error: unknown) => {
-        setUploadError(error instanceof Error ? error.message : "A document could not be uploaded.");
+      .catch(() => {
+        setUploadError("A document could not be uploaded. Please try again.");
       })
       .finally(() => setUploadProgress(null));
   }
@@ -381,8 +381,8 @@ export default function ProviderProfileManagementPage({
       })),
     )
       .then((items) => updateProfile("portfolio", [...profile.portfolio, ...items]))
-      .catch((error: unknown) => {
-        setUploadError(error instanceof Error ? error.message : "A portfolio image could not be uploaded.");
+      .catch(() => {
+        setUploadError("A portfolio image could not be uploaded. Please try again.");
       })
       .finally(() => setUploadProgress(null));
   }
@@ -464,7 +464,7 @@ export default function ProviderProfileManagementPage({
       .catch((error: unknown) => {
         console.error("Could not reload provider profile.", error);
         setProfileLoadError(
-          "Your business profile could not be loaded from the server. Check your connection and try again.",
+          "Your business profile could not be loaded. Please try again.",
         );
       })
       .finally(() => setProfileLoading(false));

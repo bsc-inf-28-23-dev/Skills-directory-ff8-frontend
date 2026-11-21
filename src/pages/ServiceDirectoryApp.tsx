@@ -78,9 +78,7 @@ export default function ServiceDirectoryApp() {
         if (isCurrent) setProviderData(providers);
       } catch (error: unknown) {
         if (isCurrent) {
-          setLoadError(
-            error instanceof Error ? error.message : "Could not load providers.",
-          );
+          setLoadError("We could not load providers. Please try again.");
         }
       } finally {
         if (isCurrent) setLoading(false);
@@ -109,9 +107,7 @@ export default function ServiceDirectoryApp() {
     } catch (error) {
       console.error("Could not save provider data.", error);
       setSaveError(
-        error instanceof Error
-          ? error.message
-          : "Could not save provider changes. Please try again.",
+        "Could not save provider changes. Please try again.",
       );
       return false;
     }
@@ -160,9 +156,7 @@ export default function ServiceDirectoryApp() {
     } catch (error: unknown) {
       console.error("Could not save provider profile.", error);
       setSaveError(
-        error instanceof Error
-          ? error.message
-          : "Could not save provider changes. Please try again.",
+        "Could not save provider changes. Please try again.",
       );
       return false;
     }

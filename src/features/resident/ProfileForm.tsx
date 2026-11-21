@@ -65,7 +65,7 @@ export default function ProfileForm({ user, onSaved, onCancel }: Props) {
       const updated = await uploadAvatar(avatarFile);
       return updated;
     } catch (err) {
-      setAvatarError((err as ApiError).message);
+      setAvatarError("We could not update your photo. Please try again.");
       return null;
     } finally {
       setUploadingAvatar(false);
@@ -108,7 +108,7 @@ export default function ProfileForm({ user, onSaved, onCancel }: Props) {
       if (apiError.fieldErrors) {
         setErrors((prev) => ({ ...prev, ...apiError.fieldErrors }));
       }
-      setServerError(apiError.message);
+      setServerError("We could not update your profile. Please try again.");
     } finally {
       setSaving(false);
     }

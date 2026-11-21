@@ -10,9 +10,7 @@ export default function ForgotPassword() {
   function handleSubmit(event: FormEvent<HTMLFormElement>) {
     event.preventDefault();
 
-    setMessage(
-      `The form was submitted for ${email}. Password reset will be available when the backend is connected.`,
-    );
+    setMessage(`Password reset could not be requested for ${email}. Please try again.`);
   }
 
   return (

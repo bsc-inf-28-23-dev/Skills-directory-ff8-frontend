@@ -1,4 +1,3 @@
-import axios from 'axios';
 import { useState, type FormEvent } from 'react';
 import { Link, useLocation, useNavigate } from 'react-router-dom';
 import './AuthForm.css';
@@ -98,18 +97,7 @@ export default function AuthForm({ mode }: AuthFormProps) {
 
       finishSignIn(user, accessToken ?? token);
     } catch (requestError: unknown) {
-      const responseMessage = axios.isAxiosError<{ message?: string }>(
-        requestError,
-      )
-        ? requestError.response?.data?.message
-        : undefined;
-
-      setError(
-        responseMessage ??
-          (requestError instanceof Error
-            ? requestError.message
-            : 'The request could not be completed. Please try again.'),
-      );
+      setError('We could not complete this sign-in. Please try again.');
     } finally {
       setIsSubmitting(false);
     }
@@ -193,8 +181,10 @@ export default function AuthForm({ mode }: AuthFormProps) {
 
             <button
               type="button"
-              className="auth-show-password"
+              className="auth-password-toggle"
               onClick={() => setShowPassword((previous) => !previous)}
+              aria-label={showPassword ? 'Hide password' : 'Show password'}
+              aria-pressed={showPassword}
             >
               {showPassword ? 'Hide' : 'Show'}
             </button>

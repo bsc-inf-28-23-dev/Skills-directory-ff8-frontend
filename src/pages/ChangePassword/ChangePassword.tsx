@@ -36,9 +36,7 @@ export default function ChangePassword() {
       return;
     }
 
-    setNotice(
-      'Password updating is not connected to the backend yet. Your password has not been changed.',
-    );
+    setNotice('Your password could not be changed. Please try again.');
   }
 
   return (

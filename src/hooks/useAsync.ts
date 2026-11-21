@@ -44,8 +44,7 @@ export function useAsync<T>(loader: () => Promise<T>, deps: unknown[] = []): Asy
               ? (err as ApiError)
               : {
                   status: null,
-                  message:
-                    err instanceof Error ? err.message : "Something went wrong.",
+                  message: "We could not complete that action. Please try again.",
                 };
           setError(apiError);
         }

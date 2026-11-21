@@ -62,11 +62,11 @@ export default function ReviewForm({ providerId, onSubmitted, embedded = false }
     } catch (err) {
       const apiError = err as ApiError;
       if (apiError.status === 409) {
-        setBlocked({ kind: "duplicate", message: apiError.message || "You have already reviewed this provider." });
+        setBlocked({ kind: "duplicate", message: "You have already reviewed this provider." });
       } else if (apiError.status === 403) {
-        setBlocked({ kind: "ineligible", message: apiError.message || "You are not able to review this provider yet." });
+        setBlocked({ kind: "ineligible", message: "You are not able to review this provider yet." });
       } else {
-        setServerError(apiError.message);
+        setServerError("We could not submit your review. Please try again.");
       }
     } finally {
       setSubmitting(false);

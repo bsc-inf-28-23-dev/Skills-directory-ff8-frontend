@@ -24,9 +24,7 @@ export default function Register() {
       return;
     }
 
-    setNotice(
-      'Registration is not connected to the backend yet. Your details have not been submitted.',
-    );
+    setNotice('Your details could not be submitted right now. Please try again.');
   }
 
   return (

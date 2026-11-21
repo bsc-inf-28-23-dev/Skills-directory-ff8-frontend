@@ -151,8 +151,8 @@ export default function AppNavigation() {
     try {
       await logout();
     } catch (error) {
-      console.error("Could not sign out on the server.", error);
-      errorMessage = "We could not confirm sign-out with the server.";
+      console.error("Could not complete sign-out.", error);
+      errorMessage = "We could not confirm sign-out. Please try again.";
     } finally {
       navigate("/login", {
         replace: true,

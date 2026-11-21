@@ -6,7 +6,7 @@ import ErrorAlert from "../../components/ErrorAlert";
 import LoadingSpinner from "../../components/LoadingSpinner";
 import { useAsync } from "../../hooks/useAsync";
 import { deleteReview, getMyReviews, updateReview } from "../../services/reviewService";
-import type { ApiError, Review } from "../../types";
+import type { Review } from "../../types";
 import { MAX_REVIEW_LENGTH, validateReview } from "../../utils/validation";
 import ReviewItem from "../reviews/ReviewItem";
 import { StarInput } from "../reviews/StarRating";
@@ -27,7 +27,7 @@ export default function MyReviews() {
       setDeleting(null);
       reload();
     } catch (err) {
-      setActionError((err as ApiError).message);
+      setActionError("We could not complete that action. Please try again.");
       setDeleting(null);
     } finally {
       setDeleteBusy(false);
@@ -132,7 +132,7 @@ function EditReviewForm({
       await updateReview(review.id, { rating, text: text.trim() });
       onSaved();
     } catch (err) {
-      setServerError((err as ApiError).message);
+      setServerError("We could not update your review. Please try again.");
     } finally {
       setSaving(false);
     }

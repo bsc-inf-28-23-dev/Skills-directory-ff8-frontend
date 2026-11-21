@@ -18,4 +18,23 @@ api.interceptors.request.use((config) => {
   return config;
 });
 
+api.interceptors.response.use(
+  (response) => response,
+  (error: unknown) => {
+    if (axios.isAxiosError(error)) {
+      const responseData = error.response?.data as
+        | { message?: string; fieldErrors?: Record<string, string> }
+        | undefined;
+
+      return Promise.reject({
+        status: error.response?.status ?? null,
+        message: 'We could not complete that action. Please try again.',
+        fieldErrors: responseData?.fieldErrors,
+      });
+    }
+
+    return Promise.reject(error);
+  },
+);
+
 export default api;
