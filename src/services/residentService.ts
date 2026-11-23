@@ -5,39 +5,49 @@ import type {
   User,
 } from "../types";
 import api from "./api";
+import { normalizeUser } from "./authService";
 
-/** GET /residents/me/recent-providers */
-export async function getRecentlyViewedProviders(): Promise<ProviderSummary[]> {
-  const { data } = await api.get<ProviderSummary[]>(
-    "/residents/me/recent-providers",
-  );
-  return data;
+// List endpoints may return { data: [...], meta: {...} } or a plain array.
+function toList<T>(payload: unknown): T[] {
+  if (Array.isArray(payload)) return payload as T[];
+  const wrapped = (payload as { data?: unknown } | null)?.data;
+  return Array.isArray(wrapped) ? (wrapped as T[]) : [];
 }
 
-/** GET /conversations?limit=5 */
+/**
+ * The backend has no GET /residents/me/recent-providers route (it returned 404),
+ * so this returns an empty list until the server adds one.
+ */
+export async function getRecentlyViewedProviders(): Promise<ProviderSummary[]> {
+  return [];
+}
+
+/** GET /conversations (exists). The limit is applied here, not sent to the server. */
 export async function getRecentConversations(
   limit = 5,
 ): Promise<ConversationSummary[]> {
-  const { data } = await api.get<ConversationSummary[]>("/conversations", {
-    params: { limit },
-  });
-  return data;
+  const { data } = await api.get("/conversations");
+  return toList<ConversationSummary>(data).slice(0, limit);
 }
 
-/** PATCH /residents/me — updates profile bio fields (not avatar) */
+/**
+ * PATCH /users/me (exists). The backend has no /residents/me route and calls the
+ * name field `name`, so `fullName` is sent as `name`.
+ */
 export async function updateResidentProfile(
   input: UpdateProfileInput,
 ): Promise<User> {
-  const { data } = await api.patch<User>("/residents/me", input);
-  return data;
+  const { fullName, ...rest } = input as UpdateProfileInput & {
+    fullName?: string;
+  };
+  const payload: Record<string, unknown> = { ...rest };
+  if (fullName !== undefined) payload.name = fullName;
+
+  const { data } = await api.patch("/users/me", payload);
+  return normalizeUser(data?.user ?? data);
 }
 
-/** POST /residents/me/avatar — multipart file upload; returns updated User */
-export async function uploadAvatar(file: File): Promise<User> {
-  const form = new FormData();
-  form.append("file", file);
-  const { data } = await api.post<User>("/residents/me/avatar", form, {
-    headers: { "Content-Type": "multipart/form-data" },
-  });
-  return data;
+/** The backend has no avatar upload route (POST /residents/me/avatar returned 404). */
+export async function uploadAvatar(_file: File): Promise<User> {
+  throw new Error("Avatar upload is not available yet.");
 }

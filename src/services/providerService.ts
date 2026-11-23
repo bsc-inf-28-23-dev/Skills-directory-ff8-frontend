@@ -1,4 +1,5 @@
 import api from "./api";
+import { normalizeUser } from "./authService";
 import type { User } from "../types";
 import type { ServiceProvider } from "../types/serviceProvider";
 
@@ -15,9 +16,17 @@ export interface ProviderProfileData {
   reviewCount?: number;
 }
 
+// The backend returns { data: [...], meta: {...} } for list endpoints.
+// This accepts either that shape or a plain array, and never returns a non-array.
+function toList<T>(payload: unknown): T[] {
+  if (Array.isArray(payload)) return payload as T[];
+  const wrapped = (payload as { data?: unknown } | null)?.data;
+  return Array.isArray(wrapped) ? (wrapped as T[]) : [];
+}
+
 export async function getProviders(): Promise<ServiceProvider[]> {
-  const { data } = await api.get<ServiceProvider[]>("/providers");
-  return data;
+  const { data } = await api.get("/providers");
+  return toList<ServiceProvider>(data);
 }
 
 export async function updateProvider(
@@ -52,8 +61,8 @@ export const providerService = {
   },
 
   async getMyAccount(): Promise<User> {
-    const { data } = await api.get<User>("/users/me");
-    return data;
+    const { data } = await api.get("/users/me");
+    return normalizeUser(data);
   },
 
   async updateMyAccount(payload: Partial<User>): Promise<User> {
