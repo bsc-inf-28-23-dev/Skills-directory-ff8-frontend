@@ -3,13 +3,7 @@ import type { ServiceProvider } from "../types/serviceProvider";
 
 export function getProviderProfileId(user: User | null): string | undefined {
   if (user?.role !== "provider") return undefined;
-  if (user.providerProfileId) return user.providerProfileId;
-
-  // Keep the existing browser demo login connected to its sample business profile.
-  return user.id === "dev-provider-1" ||
-    user.email.toLowerCase() === "provider@test.com"
-    ? "rapid-flow"
-    : undefined;
+  return user.providerProfileId;
 }
 
 export function getProviderProfileRouteId(user: User | null): string | undefined {

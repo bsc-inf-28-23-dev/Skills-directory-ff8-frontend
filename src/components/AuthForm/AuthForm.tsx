@@ -94,9 +94,8 @@ export default function AuthForm({ mode }: AuthFormProps) {
         email,
         password,
       });
-
       finishSignIn(user, accessToken ?? token);
-    } catch (requestError: unknown) {
+    } catch {
       setError('We could not complete this sign-in. Please try again.');
     } finally {
       setIsSubmitting(false);

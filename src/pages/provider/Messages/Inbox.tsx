@@ -1,18 +1,19 @@
 import React, { useMemo, useState } from 'react';
 import { MessageCircle, Search } from 'lucide-react';
 import { useNavigate } from 'react-router-dom';
-import { providerConversations } from '../../../data/providerConversations';
 import './Inbox.css';
 
 export const Inbox: React.FC = () => {
   const navigate = useNavigate();
   const [search, setSearch] = useState('');
-  const conversations = useMemo(() => {
+  const conversations: { id: string; otherPartyId: string; otherPartyName: string; lastMessage: string; lastMessageAt: string; unreadCount: number }[] = [];
+
+  const filteredConversations = useMemo(() => {
     const query = search.trim().toLowerCase();
-    return providerConversations.filter((conversation) =>
+    return conversations.filter((conversation) =>
       conversation.otherPartyName.toLowerCase().includes(query),
     );
-  }, [search]);
+  }, [search, conversations]);
 
   return (
     <div className="inbox-page">
@@ -23,8 +24,8 @@ export const Inbox: React.FC = () => {
               <p>Skillz Directory</p>
               <h1 className="inbox-title">Messages</h1>
               <span className="inbox-subtitle">
-                {providerConversations.length} conversation
-                {providerConversations.length !== 1 ? 's' : ''}
+                {filteredConversations.length} conversation
+                {filteredConversations.length !== 1 ? 's' : ''}
               </span>
             </div>
             <MessageCircle size={21} aria-hidden="true" />
@@ -42,7 +43,7 @@ export const Inbox: React.FC = () => {
           </label>
 
           <div className="inbox-list">
-            {conversations.map((c) => {
+            {filteredConversations.map((c) => {
               const time = new Date(c.lastMessageAt).toLocaleTimeString([], {
                 hour: '2-digit',
                 minute: '2-digit',
@@ -80,7 +81,7 @@ export const Inbox: React.FC = () => {
                 </button>
               );
             })}
-            {conversations.length === 0 && (
+            {filteredConversations.length === 0 && (
               <p className="inbox-no-results">No conversations found.</p>
             )}
           </div>

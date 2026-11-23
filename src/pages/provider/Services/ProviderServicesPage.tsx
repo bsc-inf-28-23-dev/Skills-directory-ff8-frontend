@@ -1,4 +1,4 @@
-import { useMemo, useState } from "react";
+import { useEffect, useMemo, useState } from "react";
 import {
   ArrowDownWideNarrow,
   ArrowLeft,
@@ -17,8 +17,10 @@ import {
 import ConfirmModal from "../../../components/ConfirmModal";
 import EmptyState from "../../../components/EmptyState";
 import ErrorAlert from "../../../components/ErrorAlert";
+import LoadingSpinner from "../../../components/LoadingSpinner";
 import { useAuth } from "../../../hooks/useAuth";
 import { loadProviderServices, saveProviderServices } from "../../../data/providerServiceStorage";
+import { getProviderProfileRouteId } from "../../../data/providerAccount";
 import type {
   ProviderService,
   ProviderServiceInput,
@@ -30,20 +32,12 @@ import ServiceStats from "./ServiceStats";
 import "./ProviderServicesPage.css";
 
 type ServiceFilterStatus = "all" | ProviderServiceStatus;
-type ServiceSort = "newest" | "oldest" | "bookings" | "rating";
+type ServiceSort = "newest" | "oldest" | "rating";
 const PAGE_SIZE = 6;
 
 function createServiceId() {
   return globalThis.crypto?.randomUUID?.() ??
     `service-${Date.now()}-${Math.random().toString(36).slice(2, 9)}`;
-}
-
-function formatPrice(service: ProviderService) {
-  if (service.pricingModel === "quotation") return "Request a quotation";
-  const amount = new Intl.NumberFormat("en-MW", {
-    maximumFractionDigits: 0,
-  }).format(service.priceMwk ?? 0);
-  return `${service.pricingModel === "starting" ? "Starting from " : ""}MWK ${amount}`;
 }
 
 export default function ProviderServicesPage() {
@@ -53,26 +47,13 @@ export default function ProviderServicesPage() {
   const createMatch = useMatch("/provider/services/new");
   const editMatch = useMatch("/provider/services/:serviceId/edit");
   const detailMatch = useMatch("/provider/services/:serviceId");
-  const [initialStorage] = useState(() => {
-    if (!user || user.role !== "provider") {
-      return { services: [] as ProviderService[], error: "" };
-    }
-    try {
-      return { services: loadProviderServices(user.id), error: "" };
-    } catch (error) {
-      console.error("Could not load provider services.", error);
-      return {
-        services: [] as ProviderService[],
-        error: "Saved services could not be loaded from this browser.",
-      };
-    }
-  });
-  const [services, setServices] = useState<ProviderService[]>(
-    () => initialStorage.services,
-  );
-  const [storageError, setStorageError] = useState(
-    () => initialStorage.error,
-  );
+  const providerProfileId =
+    user?.role === "provider"
+      ? getProviderProfileRouteId(user) ?? user.id
+      : "";
+  const [services, setServices] = useState<ProviderService[]>([]);
+  const [servicesLoading, setServicesLoading] = useState(true);
+  const [storageError, setStorageError] = useState("");
   const [storageNotice, setStorageNotice] = useState("");
   const [search, setSearch] = useState("");
   const [categoryFilter, setCategoryFilter] = useState("");
@@ -83,6 +64,39 @@ export default function ProviderServicesPage() {
     null,
   );
   const [showHelp, setShowHelp] = useState(false);
+
+  useEffect(() => {
+    let isCurrent = true;
+    if (!user || user.role !== "provider") {
+      setServicesLoading(false);
+      return () => {
+        isCurrent = false;
+      };
+    }
+
+    setServicesLoading(true);
+    setStorageError("");
+    loadProviderServices(user.id, providerProfileId)
+      .then((loadedServices) => {
+        if (isCurrent) setServices(loadedServices);
+      })
+      .catch((error: unknown) => {
+        console.error("Could not load provider services.", error);
+        if (isCurrent) {
+          setServices([]);
+          setStorageError(
+            "Saved services could not be loaded from this browser.",
+          );
+        }
+      })
+      .finally(() => {
+        if (isCurrent) setServicesLoading(false);
+      });
+
+    return () => {
+      isCurrent = false;
+    };
+  }, [providerProfileId, user]);
 
   const categories = useMemo(
     () => [...new Set(services.map((service) => service.category))].sort(),
@@ -95,7 +109,7 @@ export default function ProviderServicesPage() {
       .filter((service) => {
         const matchesSearch =
           !query ||
-          `${service.name} ${service.shortDescription} ${service.description}`
+          `${service.name} ${service.shortDescription}`
             .toLowerCase()
             .includes(query);
         const matchesCategory =
@@ -107,9 +121,6 @@ export default function ProviderServicesPage() {
       .sort((a, b) => {
         if (sortBy === "oldest") {
           return a.createdAt.localeCompare(b.createdAt);
-        }
-        if (sortBy === "bookings") {
-          return (b.bookingCount ?? -1) - (a.bookingCount ?? -1);
         }
         if (sortBy === "rating") {
           return (b.averageRating ?? -1) - (a.averageRating ?? -1);
@@ -126,10 +137,13 @@ export default function ProviderServicesPage() {
     ? services.find((service) => service.id === editMatch.params.serviceId)
     : undefined;
 
-  function persist(nextServices: ProviderService[], notice: string) {
+  async function persist(
+    nextServices: ProviderService[],
+    notice: string,
+  ): Promise<boolean> {
     if (!user || user.role !== "provider") return false;
     try {
-      saveProviderServices(user.id, nextServices);
+      await saveProviderServices(user.id, providerProfileId, nextServices);
       setServices(nextServices);
       setStorageError("");
       setStorageNotice(notice);
@@ -157,9 +171,8 @@ export default function ProviderServicesPage() {
     const service: ProviderService = {
       ...input,
       id: existing?.id ?? createServiceId(),
-      providerId: user.id,
+      providerId: providerProfileId,
       status,
-      bookingCount: existing?.bookingCount ?? null,
       averageRating: existing?.averageRating ?? null,
       createdAt: existing?.createdAt ?? now,
       updatedAt: now,
@@ -169,7 +182,7 @@ export default function ProviderServicesPage() {
       : [service, ...services];
 
     if (
-      persist(
+      await persist(
         nextServices,
         status === "pending"
           ? "Service submitted for approval."
@@ -197,7 +210,7 @@ export default function ProviderServicesPage() {
       rejectionReason: undefined,
       updatedAt: new Date().toISOString(),
     };
-    persist(
+    void persist(
       services.map((item) => (item.id === service.id ? updated : item)),
       nextStatus === "inactive"
         ? "Service deactivated and hidden from residents."
@@ -207,11 +220,11 @@ export default function ProviderServicesPage() {
     );
   }
 
-  function deleteService() {
+  async function deleteService() {
     if (!serviceToDelete) return;
     const deletedName = serviceToDelete.name;
     if (
-      persist(
+      await persist(
         services.filter((service) => service.id !== serviceToDelete.id),
         `"${deletedName}" was deleted.`,
       )
@@ -243,6 +256,10 @@ export default function ProviderServicesPage() {
     return <Navigate to="/resident/dashboard" replace />;
   }
 
+  if (servicesLoading) {
+    return <LoadingSpinner label="Loading your services..." />;
+  }
+
   if (!createMatch && !editMatch && detailMatch && !activeService) {
     return <Navigate to="/provider/services" replace />;
   }
@@ -253,26 +270,6 @@ export default function ProviderServicesPage() {
   return (
     <main className="provider-services-page">
       <div className="provider-services-page__container">
-        <div className="provider-services__prototype-note" role="note">
-          <strong>Prototype storage:</strong> service changes are saved in this
-          browser under your signed-in account. Publishing and approval require
-          backend integration.
-          <button
-            type="button"
-            aria-label="More about prototype storage"
-            onClick={() => setShowHelp((visible) => !visible)}
-          >
-            {showHelp ? "Hide details" : "Why?"}
-          </button>
-          {showHelp && (
-            <p>
-              Listings created here are not yet sent to Skillz Directory or
-              visible to residents. Browser storage is not a secure boundary;
-              the backend must enforce provider ownership before production.
-            </p>
-          )}
-        </div>
-
         {storageError && <ErrorAlert message={storageError} />}
         {storageNotice && (
           <div className="provider-services__notice" role="status">
@@ -330,8 +327,8 @@ export default function ProviderServicesPage() {
 
             {showHelp && (
               <div className="provider-services__help">
-                Complete each listing with clear pricing, location and
-                availability. New submissions are saved as pending approval.
+                Add a service name, category, short description and image.
+                Your provider profile is linked automatically.
               </div>
             )}
 
@@ -410,7 +407,6 @@ export default function ProviderServicesPage() {
                   >
                     <option value="newest">Newest first</option>
                     <option value="oldest">Oldest first</option>
-                    <option value="bookings">Most booked</option>
                     <option value="rating">Highest rated</option>
                   </select>
                 </label>
@@ -502,8 +498,6 @@ function ServiceDetails({
   onChangeStatus: () => void;
 }) {
   const navigate = useNavigate();
-  const [imageIndex, setImageIndex] = useState(service.coverImageIndex);
-  const coverImage = service.images[imageIndex] ?? service.images[0];
   const statusLabels: Record<ProviderServiceStatus, string> = {
     draft: "Draft",
     pending: "Pending approval",
@@ -553,79 +547,18 @@ function ServiceDetails({
       <div className="provider-service-detail__layout">
         <div className="provider-service-detail__main">
           <section className="provider-service-detail__gallery">
-            {coverImage ? (
-              <img src={coverImage} alt={`${service.name} service`} />
+            {service.imageUrl ? (
+              <img src={service.imageUrl} alt={`${service.name} service`} />
             ) : (
               <div className="provider-service-detail__no-image">
                 No service images added
               </div>
             )}
-            {service.images.length > 1 && (
-              <div className="provider-service-detail__thumbnails">
-                {service.images.map((image, index) => (
-                  <button
-                    type="button"
-                    key={`${image.slice(0, 40)}-${index}`}
-                    className={index === imageIndex ? "is-selected" : ""}
-                    onClick={() => setImageIndex(index)}
-                    aria-label={`View image ${index + 1}`}
-                    aria-pressed={index === imageIndex}
-                  >
-                    <img src={image} alt="" />
-                  </button>
-                ))}
-              </div>
-            )}
           </section>
 
           <section className="provider-service-detail__panel">
-            <h2>About this service</h2>
-            <p>{service.description}</p>
-            {service.subcategory && (
-              <p>
-                <strong>Subcategory:</strong> {service.subcategory}
-              </p>
-            )}
-          </section>
-
-          <section className="provider-service-detail__panel">
-            <h2>Availability and coverage</h2>
-            <dl>
-              <div>
-                <dt>Location</dt>
-                <dd>{service.operatingLocation || "Not specified"}</dd>
-              </div>
-              <div>
-                <dt>Coverage</dt>
-                <dd>
-                  {service.coverageAreas.length
-                    ? service.coverageAreas.join(", ")
-                    : "Not specified"}
-                </dd>
-              </div>
-              <div>
-                <dt>Working days</dt>
-                <dd>{service.workingDays.join(", ")}</dd>
-              </div>
-              <div>
-                <dt>Hours</dt>
-                <dd>
-                  {service.openingTime}–{service.closingTime}
-                </dd>
-              </div>
-              <div>
-                <dt>Booking availability</dt>
-                <dd>{service.availableForBooking ? "Available" : "Unavailable"}</dd>
-              </div>
-            </dl>
-          </section>
-
-          <section className="provider-service-detail__panel">
-            <h2>Customer reviews</h2>
-            <p className="provider-service-detail__unavailable">
-              Service-specific reviews will appear here when connected to the
-              reviews API.
-            </p>
+            <h2>Short description</h2>
+            <p>{service.shortDescription}</p>
           </section>
         </div>
 
@@ -634,35 +567,10 @@ function ServiceDetails({
             <span className={`provider-service-status is-${service.status}`}>
               {statusLabels[service.status]}
             </span>
-            <p className="provider-service-detail__price">
-              {formatPrice(service)}
-            </p>
-            <p className="provider-service-detail__small">
-              {service.pricingModel === "quotation"
-                ? "Customers contact you for pricing."
-                : "Pricing shown in Malawian Kwacha."}
-            </p>
-          </section>
-
-          <section className="provider-service-detail__metrics">
-            <h2>Performance</h2>
-            <div>
-              <span>Booking requests</span>
-              <strong>{service.bookingCount ?? "—"}</strong>
-            </div>
-            <div>
-              <span>Completed bookings</span>
-              <strong>—</strong>
-            </div>
-            <div>
-              <span>Average rating</span>
-              <strong>
-                {service.averageRating == null
-                  ? "—"
-                  : service.averageRating.toFixed(1)}
-              </strong>
-            </div>
-            <p>Performance data will appear when connected to the backend.</p>
+            <p>Provider profile is linked to this service.</p>
+            <Link to={`/provider/profile/${service.providerId}`}>
+              View business profile
+            </Link>
           </section>
 
           <button

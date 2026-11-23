@@ -1,11 +1,5 @@
 import { useState, type ChangeEvent, type FormEvent } from "react";
-import {
-  ArrowLeft,
-  ImagePlus,
-  Star,
-  Trash2,
-  Upload,
-} from "lucide-react";
+import { ArrowLeft, ImagePlus, Trash2, Upload } from "lucide-react";
 import { Link } from "react-router-dom";
 import { categories } from "../../../data/provider";
 import type {
@@ -14,36 +8,12 @@ import type {
   ProviderServiceStatus,
 } from "../../../types/providerService";
 
-const WEEKDAYS = [
-  "Monday",
-  "Tuesday",
-  "Wednesday",
-  "Thursday",
-  "Friday",
-  "Saturday",
-  "Sunday",
-];
-const MAX_IMAGE_COUNT = 5;
-const MAX_IMAGE_SIZE = 3 * 1024 * 1024;
+const MAX_IMAGE_SIZE = 6 * 1024 * 1024;
 const defaultInput: ProviderServiceInput = {
   name: "",
   category: "",
-  subcategory: "",
   shortDescription: "",
-  description: "",
-  images: [],
-  coverImageIndex: 0,
-  pricingModel: "quotation",
-  priceMwk: null,
-  operatingLocation: "",
-  coverageAreas: [],
-  travelsToCustomer: true,
-  offeredAtPremises: false,
-  workingDays: ["Monday", "Tuesday", "Wednesday", "Thursday", "Friday"],
-  openingTime: "08:00",
-  closingTime: "17:00",
-  availableForBooking: true,
-  status: "draft",
+  imageUrl: "",
 };
 
 function readImage(file: File): Promise<string> {
@@ -73,28 +43,10 @@ export default function ProviderServiceForm({
       ? {
           name: service.name,
           category: service.category,
-          subcategory: service.subcategory,
           shortDescription: service.shortDescription,
-          description: service.description,
-          images: [...service.images],
-          coverImageIndex: service.coverImageIndex,
-          pricingModel: service.pricingModel,
-          priceMwk: service.priceMwk,
-          operatingLocation: service.operatingLocation,
-          coverageAreas: [...service.coverageAreas],
-          travelsToCustomer: service.travelsToCustomer,
-          offeredAtPremises: service.offeredAtPremises,
-          workingDays: [...service.workingDays],
-          openingTime: service.openingTime,
-          closingTime: service.closingTime,
-          availableForBooking: service.availableForBooking,
-          status: service.status,
-          rejectionReason: service.rejectionReason,
+          imageUrl: service.imageUrl,
         }
       : defaultInput,
-  );
-  const [coverageText, setCoverageText] = useState(
-    service?.coverageAreas.join(", ") ?? "",
   );
   const [imageError, setImageError] = useState("");
   const [formError, setFormError] = useState("");
@@ -108,96 +60,53 @@ export default function ProviderServiceForm({
     setForm((current) => ({ ...current, [key]: value }));
   }
 
-  async function handleImagesChange(event: ChangeEvent<HTMLInputElement>) {
-    const files = Array.from(event.target.files ?? []);
+  async function handleImageChange(event: ChangeEvent<HTMLInputElement>) {
+    const file = event.target.files?.[0];
     event.target.value = "";
     setImageError("");
 
-    if (!files.length) return;
-    if (files.some((file) => !file.type.startsWith("image/"))) {
-      setImageError("Choose image files only.");
+    if (!file) return;
+    if (!file.type.startsWith("image/")) {
+      setImageError("Choose an image file.");
       return;
     }
-    if (files.some((file) => file.size > MAX_IMAGE_SIZE)) {
-      setImageError("Each image must be 3 MB or smaller.");
-      return;
-    }
-    if (form.images.length + files.length > MAX_IMAGE_COUNT) {
-      setImageError(`You can add up to ${MAX_IMAGE_COUNT} images.`);
+    if (file.size >= MAX_IMAGE_SIZE) {
+      setImageError("The image must be smaller than 6 MB.");
       return;
     }
 
     try {
-      const images = await Promise.all(files.map(readImage));
-      setForm((current) => ({
-        ...current,
-        images: [...current.images, ...images],
-      }));
+      update("imageUrl", await readImage(file));
     } catch (error) {
-      console.error("Could not read the selected service images.", error);
-      setImageError(
-        "We could not read the selected images. Please try again.",
-      );
+      console.error("Could not read the selected service image.", error);
+      setImageError("We could not read the selected image. Please try again.");
     }
-  }
-
-  function toggleDay(day: string) {
-    const nextDays = form.workingDays.includes(day)
-      ? form.workingDays.filter((item) => item !== day)
-      : [...form.workingDays, day];
-    update("workingDays", nextDays);
   }
 
   async function handleSubmit(event: FormEvent<HTMLFormElement>) {
     event.preventDefault();
     setFormError("");
+
     const submitter = (event.nativeEvent as SubmitEvent)
       .submitter as HTMLButtonElement | null;
     const status: ProviderServiceStatus =
       submitter?.value === "publish" ? "pending" : "draft";
-    const amount =
-      form.pricingModel === "quotation"
-        ? null
-        : Number(form.priceMwk);
 
-    if (form.pricingModel !== "quotation" && (!amount || amount <= 0)) {
-      setFormError("Enter a price greater than zero, or select Request a quote.");
+    if (!form.imageUrl) {
+      setFormError("Add a service image before saving.");
       return;
     }
-    if (!form.workingDays.length) {
-      setFormError("Select at least one working day.");
-      return;
-    }
-
-    const input: ProviderServiceInput = {
-      ...form,
-      priceMwk: amount,
-      coverageAreas: coverageText
-        .split(",")
-        .map((area) => area.trim())
-        .filter(Boolean),
-      status,
-      rejectionReason: undefined,
-    };
 
     setSaving(true);
     try {
-      await onSave(input, status);
+      await onSave(form, status);
     } catch (error) {
       console.error("Could not save the service listing.", error);
-      setFormError(
-        "Your service could not be saved. Please try again.",
-      );
+      setFormError("Your service could not be saved. Please try again.");
     } finally {
       setSaving(false);
     }
   }
-
-  const imagePreview = form.images[form.coverImageIndex] ?? form.images[0];
-  const pricePreview =
-    form.pricingModel === "quotation"
-      ? "Request a quote"
-      : `MWK ${new Intl.NumberFormat("en-MW").format(form.priceMwk ?? 0)}`;
 
   return (
     <main className="provider-services-page">
@@ -212,7 +121,8 @@ export default function ProviderServiceForm({
             <p className="eyebrow">{service ? "Update your listing" : "Grow your business"}</p>
             <h1>{service ? "Edit service" : "Add a new service"}</h1>
             <p>
-              Add clear details to help residents understand what you offer.
+              Add the essentials. Your provider profile will be linked
+              automatically.
             </p>
           </div>
         </header>
@@ -222,8 +132,8 @@ export default function ProviderServiceForm({
             <div className="provider-service-form__section-heading">
               <span>01</span>
               <div>
-                <h2>Basic information</h2>
-                <p>Give your service a clear name and description.</p>
+                <h2>Service information</h2>
+                <p>Tell residents what you offer.</p>
               </div>
             </div>
             <div className="row g-3">
@@ -259,27 +169,14 @@ export default function ProviderServiceForm({
                   ))}
                 </select>
               </div>
-              <div className="col-12 col-md-6">
-                <label className="form-label" htmlFor="service-subcategory">
-                  Subcategory
-                </label>
-                <input
-                  id="service-subcategory"
-                  className="form-control"
-                  value={form.subcategory}
-                  onChange={(event) =>
-                    update("subcategory", event.target.value)
-                  }
-                  placeholder="e.g. Residential plumbing"
-                />
-              </div>
               <div className="col-12">
                 <label className="form-label" htmlFor="service-short-description">
                   Short description *
                 </label>
-                <input
+                <textarea
                   id="service-short-description"
                   className="form-control"
+                  rows={3}
                   value={form.shortDescription}
                   onChange={(event) =>
                     update("shortDescription", event.target.value)
@@ -292,23 +189,6 @@ export default function ProviderServiceForm({
                   {form.shortDescription.length}/180
                 </div>
               </div>
-              <div className="col-12">
-                <label className="form-label" htmlFor="service-description">
-                  Full service description *
-                </label>
-                <textarea
-                  id="service-description"
-                  className="form-control"
-                  rows={5}
-                  value={form.description}
-                  onChange={(event) =>
-                    update("description", event.target.value)
-                  }
-                  maxLength={3000}
-                  placeholder="Describe what's included, your experience, and what customers can expect."
-                  required
-                />
-              </div>
             </div>
           </section>
 
@@ -316,277 +196,47 @@ export default function ProviderServiceForm({
             <div className="provider-service-form__section-heading">
               <span>02</span>
               <div>
-                <h2>Service images</h2>
-                <p>Add up to five images. Each image must be 3 MB or smaller.</p>
+                <h2>Service image</h2>
+                <p>Choose one image smaller than 6 MB.</p>
               </div>
             </div>
-            <label className="provider-service-upload">
+            <label className="provider-service-upload" htmlFor="service-image">
               <Upload size={20} aria-hidden="true" />
-              <strong>Choose images</strong>
-              <span>JPG, PNG, GIF or WebP</span>
+              <strong>{form.imageUrl ? "Replace image" : "Choose image"}</strong>
+              <span>JPG, PNG, GIF or WebP · Under 6 MB</span>
               <input
+                id="service-image"
                 type="file"
                 accept="image/*"
-                multiple
-                onChange={handleImagesChange}
-                disabled={form.images.length >= MAX_IMAGE_COUNT}
+                onChange={handleImageChange}
+                required={!form.imageUrl}
+                aria-describedby={imageError ? "service-image-error" : undefined}
               />
             </label>
             {imageError && (
-              <p className="provider-service-form__error" role="alert">
+              <p
+                id="service-image-error"
+                className="provider-service-form__error"
+                role="alert"
+              >
                 {imageError}
               </p>
             )}
-            {form.images.length > 0 && (
+            {form.imageUrl && (
               <div className="provider-service-images">
-                {form.images.map((image, index) => (
-                  <div
-                    className={`provider-service-images__item${
-                      index === form.coverImageIndex ? " is-cover" : ""
-                    }`}
-                    key={`${image.slice(0, 40)}-${index}`}
+                <div className="provider-service-images__item is-cover">
+                  <img src={form.imageUrl} alt="Service preview" />
+                  <button
+                    type="button"
+                    className="provider-service-images__remove"
+                    aria-label="Remove service image"
+                    onClick={() => update("imageUrl", "")}
                   >
-                    <img src={image} alt={`Service image ${index + 1}`} />
-                    <button
-                      type="button"
-                      className="provider-service-images__cover"
-                      onClick={() => update("coverImageIndex", index)}
-                      aria-pressed={index === form.coverImageIndex}
-                    >
-                      {index === form.coverImageIndex ? (
-                        <>
-                          <Star size={13} fill="currentColor" /> Cover
-                        </>
-                      ) : (
-                        "Set as cover"
-                      )}
-                    </button>
-                    <button
-                      type="button"
-                      className="provider-service-images__remove"
-                      aria-label={`Remove image ${index + 1}`}
-                      onClick={() =>
-                        setForm((current) => {
-                          const images = current.images.filter(
-                            (_, imageIndex) => imageIndex !== index,
-                          );
-                          return {
-                            ...current,
-                            images,
-                            coverImageIndex:
-                              images.length === 0
-                                ? 0
-                                : index < current.coverImageIndex
-                                  ? current.coverImageIndex - 1
-                                  : Math.min(
-                                      current.coverImageIndex,
-                                      images.length - 1,
-                                    ),
-                          };
-                        })
-                      }
-                    >
-                      <Trash2 size={14} />
-                    </button>
-                  </div>
-                ))}
-              </div>
-            )}
-          </section>
-
-          <section className="provider-service-form__section">
-            <div className="provider-service-form__section-heading">
-              <span>03</span>
-              <div>
-                <h2>Pricing</h2>
-                <p>Tell residents how your service is priced.</p>
-              </div>
-            </div>
-            <div className="provider-service-pricing">
-              {(
-                [
-                  ["fixed", "Fixed price", "One set price"],
-                  ["starting", "Starting from", "Price depends on the work"],
-                  ["quotation", "Request a quote", "Discuss price with customer"],
-                ] as const
-              ).map(([model, label, description]) => (
-                <label
-                  className={`provider-service-pricing__option${
-                    form.pricingModel === model ? " is-selected" : ""
-                  }`}
-                  key={model}
-                >
-                  <input
-                    type="radio"
-                    name="pricing-model"
-                    checked={form.pricingModel === model}
-                    onChange={() => update("pricingModel", model)}
-                  />
-                  <span>
-                    <strong>{label}</strong>
-                    <small>{description}</small>
-                  </span>
-                </label>
-              ))}
-            </div>
-            {form.pricingModel !== "quotation" && (
-              <div className="provider-service-price-input">
-                <label className="form-label" htmlFor="service-price">
-                  Price (MWK) *
-                </label>
-                <div className="input-group">
-                  <span className="input-group-text">MWK</span>
-                  <input
-                    id="service-price"
-                    className="form-control"
-                    type="number"
-                    min="1"
-                    step="1"
-                    value={form.priceMwk ?? ""}
-                    onChange={(event) =>
-                      update(
-                        "priceMwk",
-                        event.target.value ? Number(event.target.value) : null,
-                      )
-                    }
-                    required
-                  />
+                    <Trash2 size={14} />
+                  </button>
                 </div>
               </div>
             )}
-          </section>
-
-          <section className="provider-service-form__section">
-            <div className="provider-service-form__section-heading">
-              <span>04</span>
-              <div>
-                <h2>Location and coverage</h2>
-                <p>Let customers know where the service is available.</p>
-              </div>
-            </div>
-            <div className="row g-3">
-              <div className="col-12 col-md-6">
-                <label className="form-label" htmlFor="service-location">
-                  Operating location *
-                </label>
-                <input
-                  id="service-location"
-                  className="form-control"
-                  value={form.operatingLocation}
-                  onChange={(event) =>
-                    update("operatingLocation", event.target.value)
-                  }
-                  placeholder="Town, district or neighborhood"
-                  required
-                />
-              </div>
-              <div className="col-12 col-md-6">
-                <label className="form-label" htmlFor="service-coverage">
-                  Coverage areas
-                </label>
-                <input
-                  id="service-coverage"
-                  className="form-control"
-                  value={coverageText}
-                  onChange={(event) => setCoverageText(event.target.value)}
-                  placeholder="Separate areas with commas"
-                />
-              </div>
-              <div className="col-12 d-flex flex-wrap gap-3">
-                <label className="form-check">
-                  <input
-                    className="form-check-input"
-                    type="checkbox"
-                    checked={form.travelsToCustomer}
-                    onChange={(event) =>
-                      update("travelsToCustomer", event.target.checked)
-                    }
-                  />
-                  <span className="form-check-label">
-                    I travel to the customer
-                  </span>
-                </label>
-                <label className="form-check">
-                  <input
-                    className="form-check-input"
-                    type="checkbox"
-                    checked={form.offeredAtPremises}
-                    onChange={(event) =>
-                      update("offeredAtPremises", event.target.checked)
-                    }
-                  />
-                  <span className="form-check-label">
-                    Customers can visit my premises
-                  </span>
-                </label>
-              </div>
-            </div>
-          </section>
-
-          <section className="provider-service-form__section">
-            <div className="provider-service-form__section-heading">
-              <span>05</span>
-              <div>
-                <h2>Availability</h2>
-                <p>Set your usual working days and hours.</p>
-              </div>
-            </div>
-            <fieldset className="provider-service-days">
-              <legend className="form-label">Working days *</legend>
-              <div>
-                {WEEKDAYS.map((day) => (
-                  <label key={day}>
-                    <input
-                      type="checkbox"
-                      checked={form.workingDays.includes(day)}
-                      onChange={() => toggleDay(day)}
-                    />
-                    {day.slice(0, 3)}
-                  </label>
-                ))}
-              </div>
-            </fieldset>
-            <div className="row g-3 mt-1">
-              <div className="col-6 col-md-3">
-                <label className="form-label" htmlFor="service-opens">
-                  Opens
-                </label>
-                <input
-                  id="service-opens"
-                  className="form-control"
-                  type="time"
-                  value={form.openingTime}
-                  onChange={(event) => update("openingTime", event.target.value)}
-                />
-              </div>
-              <div className="col-6 col-md-3">
-                <label className="form-label" htmlFor="service-closes">
-                  Closes
-                </label>
-                <input
-                  id="service-closes"
-                  className="form-control"
-                  type="time"
-                  value={form.closingTime}
-                  onChange={(event) => update("closingTime", event.target.value)}
-                />
-              </div>
-              <div className="col-12 col-md-6 d-flex align-items-end">
-                <label className="form-check mb-2">
-                  <input
-                    className="form-check-input"
-                    type="checkbox"
-                    checked={form.availableForBooking}
-                    onChange={(event) =>
-                      update("availableForBooking", event.target.checked)
-                    }
-                  />
-                  <span className="form-check-label">
-                    Currently available for booking
-                  </span>
-                </label>
-              </div>
-            </div>
           </section>
 
           {formError && (
@@ -631,8 +281,8 @@ export default function ProviderServiceForm({
           <aside className="provider-service-preview" aria-label="Service preview">
             <p className="eyebrow">Marketplace preview</p>
             <div className="provider-service-preview__card">
-              {imagePreview ? (
-                <img src={imagePreview} alt="" />
+              {form.imageUrl ? (
+                <img src={form.imageUrl} alt="" />
               ) : (
                 <div className="provider-service-preview__image">
                   <ImagePlus size={28} />
@@ -641,8 +291,10 @@ export default function ProviderServiceForm({
               <div>
                 <span>{form.category || "Service category"}</span>
                 <h2>{form.name || "Your service name"}</h2>
-                <p>{form.shortDescription || "Your short description appears here."}</p>
-                <strong>{pricePreview}</strong>
+                <p>
+                  {form.shortDescription ||
+                    "Your short description appears here."}
+                </p>
               </div>
             </div>
           </aside>

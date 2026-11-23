@@ -1,9 +1,7 @@
 import {
   ArrowUpRight,
   Ellipsis,
-  MapPin,
   Pencil,
-  Star,
   Trash2,
 } from "lucide-react";
 import { Link } from "react-router-dom";
@@ -15,14 +13,6 @@ const statusLabels: Record<ProviderService["status"], string> = {
   active: "Active",
   inactive: "Inactive",
   rejected: "Rejected",
-};
-
-function getPrice(service: ProviderService) {
-  if (service.pricingModel === "quotation") return "Request a quote";
-  const amount = new Intl.NumberFormat("en-MW", {
-    maximumFractionDigits: 0,
-  }).format(service.priceMwk ?? 0);
-  return `${service.pricingModel === "starting" ? "From " : ""}MWK ${amount}`;
 }
 
 export default function ProviderServiceCard({
@@ -34,7 +24,6 @@ export default function ProviderServiceCard({
   onChangeStatus: (service: ProviderService) => void;
   onDelete: (service: ProviderService) => void;
 }) {
-  const coverImage = service.images[service.coverImageIndex] ?? service.images[0];
   const statusAction =
     service.status === "active"
       ? "Deactivate"
@@ -51,8 +40,8 @@ export default function ProviderServiceCard({
         className="provider-service-card__image"
         aria-label={`View ${service.name}`}
       >
-        {coverImage ? (
-          <img src={coverImage} alt="" loading="lazy" />
+        {service.imageUrl ? (
+          <img src={service.imageUrl} alt="" loading="lazy" />
         ) : (
           <span>{service.category}</span>
         )}
@@ -66,7 +55,6 @@ export default function ProviderServiceCard({
           <div>
             <span className="provider-service-card__category">
               {service.category}
-              {service.subcategory ? ` · ${service.subcategory}` : ""}
             </span>
             <h2>
               <Link to={`/provider/services/${service.id}`}>{service.name}</Link>
@@ -107,25 +95,10 @@ export default function ProviderServiceCard({
           </p>
         )}
 
-        <div className="provider-service-card__metadata">
-          <span>{getPrice(service)}</span>
-          <span>
-            <MapPin size={14} aria-hidden="true" />
-            {service.operatingLocation || "Location not set"}
-          </span>
-        </div>
-
         <div className="provider-service-card__metrics">
           <span>
-            {service.bookingCount == null ? "—" : service.bookingCount}
-            <small>Bookings</small>
-          </span>
-          <span>
-            <Star size={14} fill="currentColor" aria-hidden="true" />
-            {service.averageRating == null
-              ? "—"
-              : service.averageRating.toFixed(1)}
-            <small>Rating</small>
+            Updated
+            <small>{new Date(service.updatedAt).toLocaleDateString()}</small>
           </span>
           <Link to={`/provider/services/${service.id}`}>
             View details <ArrowUpRight size={14} aria-hidden="true" />
